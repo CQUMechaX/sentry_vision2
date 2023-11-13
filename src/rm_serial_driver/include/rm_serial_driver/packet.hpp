@@ -28,6 +28,7 @@ struct ReceivePacket
 struct SendPacket
 {
   uint8_t header = 0xA5;
+  uint8_t frame_id;
   bool tracking : 1;
   uint8_t id : 3;          // 0-outpost 6-guard 7-base
   uint8_t armors_num : 3;  // 2-balance 3-outpost 4-normal
@@ -39,10 +40,13 @@ struct SendPacket
   float vx;
   float vy;
   float vz;
-  float v_yaw;
+  float v_yaw; 
   float r1;
   float r2;
   float dz;
+  float nav_vx;
+  float nav_vy;
+  float nav_yaw;
   uint16_t checksum = 0;
 } __attribute__((packed));
 

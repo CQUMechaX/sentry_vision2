@@ -220,6 +220,7 @@ void RMSerialDriver::sendData(const auto_aim_interfaces::msg::Target::SharedPtr 
 
   try {
     SendPacket packet;
+    packet.frame_id  = 0;
     packet.tracking = msg->tracking;
     packet.id = id_unit8_map.at(msg->id);
     packet.armors_num = msg->armors_num;
