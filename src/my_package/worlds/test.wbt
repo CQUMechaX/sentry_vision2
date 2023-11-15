@@ -1,0 +1,294 @@
+#VRML_SIM R2023b utf8
+
+EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2023b/projects/objects/backgrounds/protos/TexturedBackground.proto"
+EXTERNPROTO "https://raw.githubusercontent.com/cyberbotics/webots/R2023b/projects/objects/floors/protos/RectangleArena.proto"
+
+WorldInfo {
+}
+Viewpoint {
+  orientation -0.10172935553487483 -0.8653080549657082 0.49080862689435467 5.812980651872144
+  position -1.1271603465612128 0.21506689443878352 0.8352863281124119
+}
+TexturedBackground {
+}
+RectangleArena {
+  floorSize 5 1
+}
+DEF rm Robot {
+  children [
+    DEF yaw HingeJoint {
+      jointParameters HingeJointParameters {
+        axis 0 0 1
+        anchor 0 0 0.12
+      }
+      device [
+        RotationalMotor {
+          name "yaw"
+        }
+      ]
+      endPoint Solid {
+        translation -0.03 0 0.12
+        children [
+          HingeJoint {
+            jointParameters HingeJointParameters {
+              axis 0 2 0
+              anchor 0.004 0 0.1
+            }
+            device [
+              RotationalMotor {
+                name "pitch"
+              }
+            ]
+            endPoint Solid {
+              translation 0.01 0 0.1
+              rotation 0 1 0 0
+              children [
+                Camera {
+                  translation 0.05 0 0.02
+                  width 720
+                  height 720
+                  bloomThreshold 10
+                }
+                CadShape {
+                  url [
+                    "../../../model/rm/rms1_obj/gunble.obj"
+                  ]
+                }
+              ]
+            }
+          }
+          CadShape {
+            url [
+              "../../../model/rm/rms1_obj/u arm.obj"
+            ]
+          }
+        ]
+      }
+    }
+    Pose {
+      translation 0 0 0.09
+      children [
+        CadShape {
+          url [
+            "../../../model/rm/rms1_obj/body.obj"
+          ]
+        }
+      ]
+    }
+    DEF RFwheel HingeJoint {
+      jointParameters HingeJointParameters {
+        axis 0 1 0
+        anchor 0.11 -0.09 0.07
+      }
+      device [
+        RotationalMotor {
+          name "RFwheel"
+        }
+      ]
+      endPoint DEF wheel Solid {
+        translation 0.11000000000000001 -0.09 0.0700005
+        rotation 1 3.199725859135483e-11 -3.1997366331314584e-11 1.570799693899558
+        children [
+          CadShape {
+            url [
+              "../../../model/rm/rms1_obj/wheels_l.obj"
+            ]
+          }
+        ]
+        name "solid(4)"
+        boundingObject Cylinder {
+          height 0.05
+          radius 0.055
+        }
+        physics Physics {
+        }
+      }
+    }
+    DEF RBwheel HingeJoint {
+      jointParameters HingeJointParameters {
+        axis 0 1 0
+        anchor -0.11 -0.09 0.07
+      }
+      device [
+        RotationalMotor {
+          name "RBwheel"
+        }
+      ]
+      endPoint DEF wheel Solid {
+        translation -0.11000000000000007 -0.09 0.0700005
+        rotation 1 -5.5496096056000946e-11 5.5496282917735785e-11 1.57079969389956
+        children [
+          CadShape {
+            url [
+              "../../../model/rm/rms1_obj/wheels_l.obj"
+            ]
+          }
+        ]
+        name "solid(3)"
+        boundingObject Cylinder {
+          height 0.05
+          radius 0.055
+        }
+        physics Physics {
+        }
+      }
+    }
+    DEF LBwheel HingeJoint {
+      jointParameters HingeJointParameters {
+        axis 0 1 0
+        anchor -0.11 0.09 0.07
+      }
+      device [
+        RotationalMotor {
+          name "LBwheel"
+        }
+      ]
+      endPoint DEF wheel Solid {
+        translation -0.1100000000000002 0.09 0.0700005
+        rotation 1 -1.856816970085838e-10 1.8568232221533378e-10 1.570799693899558
+        children [
+          CadShape {
+            url [
+              "../../../model/rm/rms1_obj/wheels_l.obj"
+            ]
+          }
+        ]
+        name "solid(2)"
+        boundingObject Cylinder {
+          height 0.05
+          radius 0.055
+        }
+        physics Physics {
+        }
+      }
+    }
+    DEF LFwheel HingeJoint {
+      jointParameters HingeJointParameters {
+        axis 0 1 0
+        anchor 0.11 0.09 0.07
+      }
+      device [
+        RotationalMotor {
+          name "LFwheel"
+        }
+      ]
+      endPoint DEF wheel Solid {
+        translation 0.10999999999999999 0.09 0.0700005
+        rotation 1 -3.8914179420672895e-12 3.891431043318747e-12 1.5707996938995537
+        children [
+          CadShape {
+            url [
+              "../../../model/rm/rms1_obj/wheels_l.obj"
+            ]
+          }
+        ]
+        name "solid(1)"
+        boundingObject Cylinder {
+          height 0.05
+          radius 0.055
+        }
+        physics Physics {
+        }
+      }
+    }
+  ]
+  name "rm"
+  boundingObject Pose {
+    translation 0 0 0.09
+    children [
+      Box {
+        size 0.32 0.12 0.08
+      }
+    ]
+  }
+  physics Physics {
+  }
+  controller "<extern>"
+}
+DEF armor Robot {
+  translation 0 -0.1 0
+  children [
+    Solid {
+      translation 0.74 0 0.23
+      children [
+        Shape {
+          appearance Appearance {
+            material Material {
+            }
+          }
+          geometry Box {
+            size 0.01 0.5 0.5
+          }
+        }
+      ]
+      name "background"
+    }
+    DEF led1 LED {
+      translation 0.51 0.136 0.265
+      rotation 1 0 0 1.5707996938995747
+      children [
+        Shape {
+          appearance PBRAppearance {
+            transparency 0.2
+            roughness 1
+            metalness 0
+            emissiveIntensity 42
+          }
+          geometry Box {
+            size 0.01 0.053 0.01
+          }
+        }
+      ]
+      name "led1"
+    }
+    DEF armor Solid {
+      translation 0.53 0 0.2
+      rotation 4.32977866015453e-17 0.7071067811865476 0.7071067811865476 3.14159
+      children [
+        DEF body Solid {
+          translation 0.0143 0.065 0.07
+          rotation 1 0 0 -1.5707996938995747
+          children [
+            Shape {
+              appearance Appearance {
+                texture ImageTexture {
+                  url [
+                    "../../../model/rm/photo/装甲板.png"
+                  ]
+                }
+              }
+              geometry Box {
+                size 0.01 0.12 0.114
+              }
+            }
+          ]
+        }
+        CadShape {
+          url [
+            "../../../model/rm/rms1_obj/am02 2020 v2m.obj"
+          ]
+        }
+      ]
+    }
+    DEF led2 LED {
+      translation 0.51 0.005 0.265
+      rotation 1 0 0 1.5707996938995747
+      children [
+        Shape {
+          appearance PBRAppearance {
+            transparency 0.2
+            roughness 1
+            metalness 0
+            emissiveIntensity 42
+          }
+          geometry Box {
+            size 0.01 0.052 0.01
+          }
+        }
+      ]
+      name "led2"
+    }
+  ]
+  name "armor"
+  controller "<extern>"
+}
