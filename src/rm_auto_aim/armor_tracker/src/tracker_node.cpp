@@ -260,7 +260,8 @@ void ArmorTrackerNode::armorsCallback(const auto_aim_interfaces::msg::Armors::Sh
      float radius_2_temp = tracker_->another_r;
      int use_1 = 1;
      float timeDelay = 2.1;
-     float tar_yaw += state(7) * timeDelay;
+     //float tar_yaw += state(7) * timeDelay;
+     float tar_yaw = state(7) * timeDelay;
      for (int i = 0; i<4; i++) {
           float tmp_yaw = tar_yaw + i * M_PI/2.0;
           float r = use_1 ? state(8) : radius_2_temp;
@@ -272,7 +273,8 @@ void ArmorTrackerNode::armorsCallback(const auto_aim_interfaces::msg::Armors::Sh
       }
 
       float tar_pitch = (float)(atan2(tar_position[idx].z, tar_position[idx].x));
-      float tar_yaw = (float)(atan2(tar_position[idx].y, tar_position[idx].x));
+      //float tar_yaw = (float)(atan2(tar_position[idx].y, tar_position[idx].x));
+      tar_yaw = (float)(atan2(tar_position[idx].y, tar_position[idx].x));
       target_msg.id = tracker_->tracked_id;
       target_msg.armors_num = static_cast<int>(tracker_->tracked_armors_num);
       target_msg.position.x = state(0);
