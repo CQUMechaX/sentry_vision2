@@ -75,7 +75,7 @@ RMSerialDriver::RMSerialDriver(const rclcpp::NodeOptions & options)
     "/tracker/target", rclcpp::SensorDataQoS(),
     std::bind(&RMSerialDriver::sendData, this, std::placeholders::_1));
   nav_sub_ = this->create_subscription<geometry_msgs::msg::Twist>(
-    "cmd_vel", 10,
+    "cmd_vel", rclcpp::SensorDataQoS(),
     std::bind(&RMSerialDriver::navsendData, this, std::placeholders::_1));
 }
 
