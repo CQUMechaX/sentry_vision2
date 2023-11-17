@@ -68,7 +68,8 @@
         "cinttypes": "cpp",
         "typeindex": "cpp",
         "typeinfo": "cpp",
-        "variant": "cpp"
+        "variant": "cpp",
+        "*.ipp": "cpp"
     },
     "cmake.sourceDirectory": "/home/mechax/cv-test/mechax_rm_cv/src/rm_serial_driver"
 }

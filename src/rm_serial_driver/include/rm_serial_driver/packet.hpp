@@ -48,6 +48,7 @@ struct SendPacket
   float nav_vy;
   float nav_yaw;
   uint16_t checksum = 0;
+  uint8_t ender = 0xED;
 } __attribute__((packed));
 
 inline ReceivePacket fromVector(const std::vector<uint8_t> & data)
