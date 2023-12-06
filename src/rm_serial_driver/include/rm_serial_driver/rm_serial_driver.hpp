@@ -31,9 +31,9 @@ namespace rm_serial_driver
 class RMSerialDriver : public rclcpp::Node
 {
 public:
-  explicit RMSerialDriver(const rclcpp::NodeOptions & options);
+  explicit RMSerialDriver(const rclcpp::NodeOptions & options); // 重载构造函数
 
-  ~RMSerialDriver() override;
+  ~RMSerialDriver() override; // 析构函数
 
 private:
   void getParams();

@@ -48,7 +48,6 @@ struct SendPacket
   float nav_vy;
   float nav_yaw;
   uint16_t checksum = 0;
-  uint8_t ender = 0xED;
 } __attribute__((packed));
 
 inline ReceivePacket fromVector(const std::vector<uint8_t> & data)
@@ -64,7 +63,7 @@ inline std::vector<uint8_t> toVector(const SendPacket & data)
   std::copy(
     reinterpret_cast<const uint8_t *>(&data),
     reinterpret_cast<const uint8_t *>(&data) + sizeof(SendPacket), packet.begin());
-  return packet;
+  return packet; 
 }
 
 }  // namespace rm_serial_driver

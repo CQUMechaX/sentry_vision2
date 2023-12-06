@@ -22,6 +22,7 @@
 #include "rm_serial_driver/packet.hpp"
 #include "rm_serial_driver/rm_serial_driver.hpp"
 
+//创建命名空间rm_serial_driver
 namespace rm_serial_driver
 {
 RMSerialDriver::RMSerialDriver(const rclcpp::NodeOptions & options)
@@ -68,12 +69,14 @@ RMSerialDriver::RMSerialDriver(const rclcpp::NodeOptions & options)
   aiming_point_.color.g = 1.0;
   aiming_point_.color.b = 1.0;
   aiming_point_.color.a = 1.0;
-  aiming_point_.lifetime = rclcpp::Duration::from_seconds(0.1);
+  aiming_point_.lifetime = rclcpp::Duration::from_seconds(0.2); // ，我的修改
 
   // Create Subscription
+  // 目标数据订阅，接收需要发送的信息
   target_sub_ = this->create_subscription<auto_aim_interfaces::msg::Target>(
     "/tracker/target", rclcpp::SensorDataQoS(),
     std::bind(&RMSerialDriver::sendData, this, std::placeholders::_1));
+  // 导航数据订阅，接收需要移动的信息
   nav_sub_ = this->create_subscription<geometry_msgs::msg::Twist>(
     "cmd_vel", rclcpp::SensorDataQoS(),
     std::bind(&RMSerialDriver::navsendData, this, std::placeholders::_1));
@@ -263,13 +266,14 @@ void RMSerialDriver::navsendData(const geometry_msgs::msg::Twist& cmd_vel)
   try {
     SendPacket packet;
     packet.frame_id = 1;
-    packet.nav_vx = cmd_vel.linear.x;
-    packet.nav_vy = cmd_vel.linear.y;
-    packet.nav_yaw = cmd_vel.angular.z;
+    packet.nav_vx = cmd_vel.linear.y*2000;
+    packet.nav_vy = cmd_vel.linear.x*2000;
+    packet.nav_yaw = -cmd_vel.angular.z*2000;
     crc16::Append_CRC16_Check_Sum(reinterpret_cast<uint8_t *>(&packet), sizeof(packet));
 
     std::vector<uint8_t> data = toVector(packet);
     serial_driver_->port()->send(data);
+    RCLCPP_WARN(get_logger(), "[zbh] data: %u vel_x=%f vel_y=%f vel_ang=%f", data[0], cmd_vel.linear.x, cmd_vel.linear.y, cmd_vel.angular.z);
   } catch (const std::exception & ex) {
     RCLCPP_ERROR(get_logger(), "Error while sending data: %s", ex.what());
     reopenPort();

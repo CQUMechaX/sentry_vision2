@@ -1,0 +1,16 @@
+digraph G {
+"livox_frame" -> "base_link"[label=" Broadcaster: default_authority\nAverage rate: 10000.0\nBuffer length: 0.0\nMost recent transform: 0.0\nOldest transform: 0.0\n"];
+"odom" -> "livox_frame"[label=" Broadcaster: default_authority\nAverage rate: 10.197\nBuffer length: 5.001\nMost recent transform: 1701760041.800096\nOldest transform: 1701760036.798806\n"];
+"gimbal_link" -> "camera_link"[label=" Broadcaster: default_authority\nAverage rate: 10000.0\nBuffer length: 0.0\nMost recent transform: 0.0\nOldest transform: 0.0\n"];
+"camera_link" -> "camera_optical_frame"[label=" Broadcaster: default_authority\nAverage rate: 10000.0\nBuffer length: 0.0\nMost recent transform: 0.0\nOldest transform: 0.0\n"];
+"map" -> "odom"[label=" Broadcaster: default_authority\nAverage rate: 7.715\nBuffer length: 3.5\nMost recent transform: 1701760041.398662\nOldest transform: 1701760037.898813\n"];
+"range_sensor" -> "inertial_sensor"[label=" Broadcaster: default_authority\nAverage rate: 197.078\nBuffer length: 3.78\nMost recent transform: 1701760041.828964\nOldest transform: 1701760038.04874\n"];
+"odom_source" -> "range_sensor"[label=" Broadcaster: default_authority\nAverage rate: 10.267\nBuffer length: 3.701\nMost recent transform: 1701760041.800096\nOldest transform: 1701760038.098783\n"];
+"odom" -> "odom_source"[label=" Broadcaster: default_authority\nAverage rate: 10.267\nBuffer length: 3.701\nMost recent transform: 1701760041.800096\nOldest transform: 1701760038.098783\n"];
+"map" -> "init_odom_source"[label=" Broadcaster: default_authority\nAverage rate: 10.267\nBuffer length: 3.701\nMost recent transform: 1701760041.800096\nOldest transform: 1701760038.098783\n"];
+"init_odom_source" -> "raw_odometry_source"[label=" Broadcaster: default_authority\nAverage rate: 10.267\nBuffer length: 3.701\nMost recent transform: 1701760041.800096\nOldest transform: 1701760038.098783\n"];
+edge [style=invis];
+ subgraph cluster_legend { style=bold; color=black; label ="view_frames Result";
+"Recorded at time: 1701760041.8486762"[ shape=plaintext ] ;
+}->"map";
+}

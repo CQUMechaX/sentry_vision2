@@ -175,8 +175,8 @@
   </link>
     
   <joint name="base_joint" type="fixed">
-    <parent link="base_link"/>
-    <child link="livox_frame"/>
+    <parent link="livox_frame"/>
+    <child link="base_link"/>
     <origin xyz="0 0 0.12" rpy="0 0 0"/>
   </joint>
     

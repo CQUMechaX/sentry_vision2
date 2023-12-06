@@ -1,0 +1,16 @@
+digraph G {
+"map" -> "odom"[label=" Broadcaster: default_authority\nAverage rate: 20.198\nBuffer length: 5.05\nMost recent transform: 1701862849.396382\nOldest transform: 1701862844.346346\n"];
+"range_sensor" -> "inertial_sensor"[label=" Broadcaster: default_authority\nAverage rate: 17.093\nBuffer length: 4.973\nMost recent transform: 1701862848.051378\nOldest transform: 1701862843.078606\n"];
+"odom_source" -> "range_sensor"[label=" Broadcaster: default_authority\nAverage rate: 10.201\nBuffer length: 4.999\nMost recent transform: 1701862847.960947\nOldest transform: 1701862842.961639\n"];
+"odom" -> "odom_source"[label=" Broadcaster: default_authority\nAverage rate: 10.201\nBuffer length: 4.999\nMost recent transform: 1701862847.960947\nOldest transform: 1701862842.961639\n"];
+"map" -> "init_odom_source"[label=" Broadcaster: default_authority\nAverage rate: 10.201\nBuffer length: 4.999\nMost recent transform: 1701862847.960947\nOldest transform: 1701862842.961639\n"];
+"init_odom_source" -> "raw_odometry_source"[label=" Broadcaster: default_authority\nAverage rate: 10.201\nBuffer length: 4.999\nMost recent transform: 1701862847.960947\nOldest transform: 1701862842.961639\n"];
+"odom" -> "livox_frame"[label=" Broadcaster: default_authority\nAverage rate: 10.201\nBuffer length: 4.999\nMost recent transform: 1701862847.960947\nOldest transform: 1701862842.961639\n"];
+"livox_frame" -> "base_link"[label=" Broadcaster: default_authority\nAverage rate: 10000.0\nBuffer length: 0.0\nMost recent transform: 0.0\nOldest transform: 0.0\n"];
+"gimbal_link" -> "camera_link"[label=" Broadcaster: default_authority\nAverage rate: 10000.0\nBuffer length: 0.0\nMost recent transform: 0.0\nOldest transform: 0.0\n"];
+"camera_link" -> "camera_optical_frame"[label=" Broadcaster: default_authority\nAverage rate: 10000.0\nBuffer length: 0.0\nMost recent transform: 0.0\nOldest transform: 0.0\n"];
+edge [style=invis];
+ subgraph cluster_legend { style=bold; color=black; label ="view_frames Result";
+"Recorded at time: 1701862849.4070494"[ shape=plaintext ] ;
+}->"gimbal_link";
+}

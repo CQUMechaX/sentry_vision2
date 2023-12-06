@@ -1,17 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
-
 <robot name="sentry"
   xmlns:xacro="http://ros.org/wiki/xacro">
 
   <xacro:arg name="xyz" default="0.10 0 0.05" />
   <xacro:arg name="rpy" default="0 0 0" />
-
   <link name="livox_frame" />
 
   <link name = "base_link" />
 
   <joint name="base_joint" type="fixed">
-    <origin xyz="-0.105 0 -0.460" rpy="0 0 0" />
+    <origin xyz="-0.105 0 -0.460" rpy="0 0 ${pi}" />
     <parent link="livox_frame" />
     <child link="base_link" />
     <axis xyz= "0 0 0" />

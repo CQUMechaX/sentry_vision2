@@ -75,7 +75,7 @@ private:
   bool isMapSet_ = false;
   mutable int seq_ = 0;
   std::shared_ptr<RangeDataAccumulatorRos> rangeDataAccumulator_;
-  std::thread icpWorker_;
+  std::thread icpWorker_,pubworker_;
   PM::TransformationParameters optimizedPose_;
   Time optimizedPoseTimestamp_;
   Time lastOptimizedPoseTimestamp_;
@@ -88,6 +88,7 @@ private:
   bool isFirstScanMatch_ = true;
   bool isUseOdometry_ = false;
   bool isSetPoseFromUser_ = false;
+  bool flag = false;
   std::string fixedFrame_ = "map";
 };
 

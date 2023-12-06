@@ -42,6 +42,7 @@ ICPlocalization::ICPlocalization(const rclcpp::NodeOptions &options)
 
 ICPlocalization::~ICPlocalization() {
   icpWorker_.join();
+  pubworker_.join();
   Rigid3d lastPose(lastPosition_, lastOrientation_);
   std::cout << "ICP_LOCO: Last transform map to range sensor: \n";
   std::cout << lastPose.asString() << "\n";
@@ -115,6 +116,18 @@ void ICPlocalization::initializeInternal() {
   tfListener_.reset(new tf2_ros::TransformListener(*tfBuffer_));
   auto callable = [this]() { icpWorker(); };
   icpWorker_ = std::thread(callable);
+  pubworker_ = std::thread([&](){
+    rclcpp::Rate r(20);
+    while(rclcpp::ok()){
+    if (!flag) {
+    r.sleep();
+    continue;
+    }
+    publishPose();
+    publishRegisteredCloud();
+    r.sleep();
+    }
+  });
 }
 
 void ICPlocalization::initialize() {
@@ -328,20 +341,23 @@ void ICPlocalization::publishPose() const {
 	iso.matrix() = optimizedPose_;
 	Eigen::Quaternionf q;
 	q = iso.rotation();
-	
+	// 获取当前时间并赋值给pose_msg.header.stamp
+  rclcpp::Clock clock(RCL_SYSTEM_TIME);
+  Time now;
+  now = fromRos(clock.now());
   q.normalize();
   pose_msg.pose.orientation.w = q.w();
   pose_msg.pose.orientation.x = q.x();
   pose_msg.pose.orientation.y = q.y();
   pose_msg.pose.orientation.z = q.z();
   pose_msg.header.frame_id = fixedFrame_;
-  pose_msg.header.stamp = toRos(optimizedPoseTimestamp_);
+  pose_msg.header.stamp = toRos(now);
   posePub_->publish(pose_msg);
 
   if (isUseOdometry_) {
-    tfPublisher_->publishMapToOdom(optimizedPoseTimestamp_);
+    tfPublisher_->publishMapToOdom(now);
   } else {
-    tfPublisher_->publishMapToRangeSensor(optimizedPoseTimestamp_);
+    tfPublisher_->publishMapToRangeSensor(now);
   }
 }
 
@@ -368,19 +384,21 @@ void ICPlocalization::icpWorker() {
     namespace ch = std::chrono;
     const auto startTime = ch::steady_clock::now();
     matchScans();
+    flag = true;
     const auto endTime = ch::steady_clock::now();
     const unsigned int nUs =
         ch::duration_cast<ch::microseconds>(endTime - startTime).count();
     const double timeMs = nUs / 1000.0;
-    //    std::string infoStr = "Scan matching took: " +
-    //    std::to_string(timeMs)
-    //    + " ms \n"; ROS_INFO_STREAM(infoStr);
+    std::string infoStr = "Scan matching took: " +
+    std::to_string(timeMs)
+    + " ms \n"; 
+    std::cout<<(infoStr);
 
-    //    ROS_INFO_STREAM_THROTTLE(10.0, "Scan matching took: " << timeMs
-    //    << " ms");
+    std::cout<< "Scan matching took: " << timeMs
+    << " ms";
 
-    publishPose();
-    publishRegisteredCloud();
+    // publishPose();
+    // publishRegisteredCloud();
 
     r.sleep();
   }

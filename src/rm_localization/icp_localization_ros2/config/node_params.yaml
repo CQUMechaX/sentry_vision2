@@ -1,6 +1,6 @@
 /icp_localization:
   ros__parameters:
-    pcd_file_path: "src/rm_simulation/pb_rm_simulation/meshes/RMUC2023_world/preview/downsampled_rm_pt.pcd"
+    pcd_file_path: "test.pcd"
     
     icp_localization_ros2:
       range_data_topic: "/cloud_registered_body"
@@ -9,7 +9,7 @@
       odometry_data_topic: "/Odometry"
       is_use_odometry: true
       is_provide_odom_frame: true
-      gravity_vector_filter_time_constant: 0.01
+      gravity_vector_filter_time_constant: 0.05
       fixed_frame: "map"
       min_num_odom_msgs_before_ready: 5
 
@@ -25,7 +25,7 @@
       imu_to_range_sensor:
         x: -0.011
         y: -0.0234
-        z: 0.044
+        z: 0.50
         roll: 0.0
         pitch: 0.0
         yaw: 0.0

@@ -1,0 +1,13 @@
+digraph G {
+"odom" -> "livox_frame"[label=" Broadcaster: default_authority\nAverage rate: 10.2\nBuffer length: 5.0\nMost recent transform: 1701759934.260441\nOldest transform: 1701759929.260445\n"];
+"map" -> "odom"[label=" Broadcaster: default_authority\nAverage rate: 6.529\nBuffer length: 4.901\nMost recent transform: 1701759933.960483\nOldest transform: 1701759929.059122\n"];
+"odom" -> "odom_source"[label=" Broadcaster: default_authority\nAverage rate: 10.2\nBuffer length: 5.0\nMost recent transform: 1701759934.260441\nOldest transform: 1701759929.260445\n"];
+"odom_source" -> "range_sensor"[label=" Broadcaster: default_authority\nAverage rate: 10.2\nBuffer length: 5.0\nMost recent transform: 1701759934.260441\nOldest transform: 1701759929.260445\n"];
+"map" -> "init_odom_source"[label=" Broadcaster: default_authority\nAverage rate: 10.2\nBuffer length: 5.0\nMost recent transform: 1701759934.260441\nOldest transform: 1701759929.260445\n"];
+"init_odom_source" -> "raw_odometry_source"[label=" Broadcaster: default_authority\nAverage rate: 10.2\nBuffer length: 5.0\nMost recent transform: 1701759934.260441\nOldest transform: 1701759929.260445\n"];
+"range_sensor" -> "inertial_sensor"[label=" Broadcaster: default_authority\nAverage rate: 196.604\nBuffer length: 5.025\nMost recent transform: 1701759934.298046\nOldest transform: 1701759929.272705\n"];
+edge [style=invis];
+ subgraph cluster_legend { style=bold; color=black; label ="view_frames Result";
+"Recorded at time: 1701759934.3118963"[ shape=plaintext ] ;
+}->"map";
+}
