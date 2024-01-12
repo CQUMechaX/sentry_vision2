@@ -34,7 +34,7 @@ public:
   explicit RMSerialDriver(const rclcpp::NodeOptions & options); // 重载构造函数
 
   ~RMSerialDriver() override; // 析构函数
-
+  
 private:
   void getParams();
 
@@ -79,8 +79,10 @@ private:
   // For debug usage
   rclcpp::Publisher<std_msgs::msg::Float64>::SharedPtr latency_pub_;
   rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr marker_pub_;
-
+  rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr pose_pub_;
   std::thread receive_thread_;
+  //申明发布目标点的发布者
+  rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr received_pose_pub_;
 };
 }  // namespace rm_serial_driver
 

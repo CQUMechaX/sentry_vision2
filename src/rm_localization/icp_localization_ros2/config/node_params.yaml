@@ -12,15 +12,15 @@
       gravity_vector_filter_time_constant: 0.05
       fixed_frame: "map"
       min_num_odom_msgs_before_ready: 5
-
+#1.700, 0.120, 0.050
     initial_pose:
-      x: 0.0 
-      y: 0.0 
-      z: 0.0 
-      roll: 0.0  # degrees  
-      pitch: 0.0 # degrees
-      yaw: 0.0  # degrees
-
+      x: 1.700
+      y: 0.120
+      z: 0.050
+      roll: 1.485  # degrees  
+      pitch: -1.732 # degrees
+      yaw: 173.845  # degrees
+#[1.485, -1.732, 173.845]
     calibration:
       imu_to_range_sensor:
         x: -0.011

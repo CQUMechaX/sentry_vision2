@@ -9,6 +9,7 @@
 #include <serial_driver/serial_driver.hpp>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
 #include <geometry_msgs/msg/twist.hpp>
+#include "geometry_msgs/msg/pose_stamped.hpp"
 
 // C++ system
 #include <cstdint>
@@ -41,7 +42,7 @@ RMSerialDriver::RMSerialDriver(const rclcpp::NodeOptions & options)
   // Create Publisher
   latency_pub_ = this->create_publisher<std_msgs::msg::Float64>("/latency", 10);
   marker_pub_ = this->create_publisher<visualization_msgs::msg::Marker>("/aiming_point", 10);
-
+  pose_pub_ = this->create_publisher<geometry_msgs::msg::PoseStamped>("/received_goal_pose", 10);
   // Detect parameter client
   detector_param_client_ = std::make_shared<rclcpp::AsyncParametersClient>(this, "armor_detector");
 
@@ -72,11 +73,11 @@ RMSerialDriver::RMSerialDriver(const rclcpp::NodeOptions & options)
   aiming_point_.lifetime = rclcpp::Duration::from_seconds(0.2); // ，我的修改
 
   // Create Subscription
-  // 目标数据订阅，接收需要发送的信息
+// 目标数据订阅，接收需要发送的信息
   target_sub_ = this->create_subscription<auto_aim_interfaces::msg::Target>(
     "/tracker/target", rclcpp::SensorDataQoS(),
     std::bind(&RMSerialDriver::sendData, this, std::placeholders::_1));
-  // 导航数据订阅，接收需要移动的信息
+// 导航数据订阅，接收需要移动的信息
   nav_sub_ = this->create_subscription<geometry_msgs::msg::Twist>(
     "cmd_vel", rclcpp::SensorDataQoS(),
     std::bind(&RMSerialDriver::navsendData, this, std::placeholders::_1));
@@ -151,12 +152,16 @@ RMSerialDriver::~RMSerialDriver()
   // }
 void RMSerialDriver::receiveData()
 {
+  RCLCPP_WARN(get_logger(), "begin");
   std::vector<uint8_t> header(1);
   std::vector<uint8_t> data;
   data.reserve(sizeof(ReceivePacket));
   bool receiving_data = false;  // 用于跟踪是否正在接收数据
   std::vector<uint8_t> data_buffer;  // 用于存储接收的数据
-
+  while(!rclcpp::ok())
+  {
+    RCLCPP_WARN(get_logger(), "wrong");
+  }
   while (rclcpp::ok()) {
       try {
           // 这一行从串行端口接收一个字节的数据，将其存储在 header 向量中
@@ -170,20 +175,20 @@ void RMSerialDriver::receiveData()
                   receiving_data = false;
 
                   // 处理接收到的数据
-                  if (data_buffer.size() == sizeof(ReceivePacket) - 1) {
-                      ReceivePacket packet = fromVector(data_buffer);
+                  // if (data_buffer.size() == sizeof(ReceivePacket) - 1) {
+                  ReceivePacket packet = fromVector(data_buffer);
 
-                      if (!initial_set_param_ || packet.detect_color != previous_receive_color_) {
+                      /*if (!initial_set_param_ || packet.detect_color != previous_receive_color_) {
                           setParam(rclcpp::Parameter("detect_color", packet.detect_color));
                           previous_receive_color_ = packet.detect_color;
-                      }
+                      }*/
 
-                      if (packet.reset_tracker) {
+                      /*if (packet.reset_tracker) {
                           resetTracker();
-                      }
+                      }*/
 
                       // 创建坐标变换消息和发布
-                      geometry_msgs::msg::TransformStamped t;
+                      /*geometry_msgs::msg::TransformStamped t;
                       timestamp_offset_ = this->get_parameter("timestamp_offset").as_double();
                       t.header.stamp = this->now() + rclcpp::Duration::from_seconds(timestamp_offset_);
                       t.header.frame_id = "odom";
@@ -198,20 +203,45 @@ void RMSerialDriver::receiveData()
                           aiming_point_.pose.position.x = packet.aim_x;
                           aiming_point_.pose.position.y = packet.aim_y;
                           aiming_point_.pose.position.z = packet.aim_z;
+RCLCPP::INFO(get_logger(),"Receive Pose: x: %.2f , y: %.2f, z: %.2f"
+                                      packet.aim_x,packet.aim_y,packet.aim_z)
                           marker_pub_->publish(aiming_point_);
                       }
+                  }*/
+                  geometry_msgs::msg::PoseStamped goal_msg;
+                  if(packet.x > 2)
+                  {
+                    packet.x = 2;
                   }
+    goal_msg.header.frame_id = "map";
+    goal_msg.header.stamp.sec = 0;
+    goal_msg.pose.position.x = packet.x;
+    goal_msg.pose.position.y = packet.y;
+    goal_msg.pose.position.z = 0.0;
+    goal_msg.pose.orientation.x = 0.0;
+    goal_msg.pose.orientation.y = 0.0;
+    goal_msg.pose.orientation.z = 0.0;
+    goal_msg.pose.orientation.w = 1.0;
+   RCLCPP_WARN(get_logger(), "[zbh] receive x=%f y=%f is_open=%s",
+    packet.x, packet.y, "open");
+                  pose_pub_->publish(goal_msg);
+                  //}
 
                   // 清空数据缓冲区
                   data_buffer.clear();
               }
           } else if (header[0] == 0x5A) {
               // 如果检测到开始标识符（0x5A），开始接收数据
+               RCLCPP_INFO(rclcpp::get_logger("pose"),"receive:5A");
               receiving_data = true;
               data_buffer.push_back(header[0]);
           }
+          else
+          {
+            RCLCPP_INFO(rclcpp::get_logger("pose"),"wait");
+          }
       } catch (const std::exception & ex) {
-          RCLCPP_ERROR_THROTTLE(
+                  RCLCPP_ERROR_THROTTLE(
               get_logger(), *get_clock(), 20, "Error while receiving data: %s", ex.what());
           reopenPort();
       }
@@ -273,7 +303,7 @@ void RMSerialDriver::navsendData(const geometry_msgs::msg::Twist& cmd_vel)
 
     std::vector<uint8_t> data = toVector(packet);
     serial_driver_->port()->send(data);
-    RCLCPP_WARN(get_logger(), "[zbh] data: %u vel_x=%f vel_y=%f vel_ang=%f", data[0], cmd_vel.linear.x, cmd_vel.linear.y, cmd_vel.angular.z);
+RCLCPP_WARN(get_logger(), "[zbh] data: %u vel_x=%f vel_y=%f vel_ang=%f", data[0], cmd_vel.linear.x, cmd_vel.linear.y, cmd_vel.angular.z);
   } catch (const std::exception & ex) {
     RCLCPP_ERROR(get_logger(), "Error while sending data: %s", ex.what());
     reopenPort();

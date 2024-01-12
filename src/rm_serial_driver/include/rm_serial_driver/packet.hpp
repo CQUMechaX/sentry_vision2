@@ -10,7 +10,7 @@
 
 namespace rm_serial_driver
 {
-struct ReceivePacket
+/*struct ReceivePacket
 {
   uint8_t header = 0x5A; 
   uint8_t detect_color : 1;  // 0-red 1-blue 发1
@@ -23,6 +23,20 @@ struct ReceivePacket
   float aim_y;               // 发0.5
   float aim_z;               // 发0.5
   uint16_t checksum = 0;     // crc16校验位 https://blog.csdn.net/ydyuse/article/details/105395368
+} __attribute__((packed));*/
+
+struct ReceivePacket
+{
+  uint8_t header = 0x5A;
+  // int id; //判断是谁发的 目前只有1，代表导航发的
+  float  x;
+  float  y;
+  float  z;
+  float  orientation_x;
+  float  orientation_y;
+  float  orientation_z;
+  float  orientation_w;
+  uint16_t checksum = 0;
 } __attribute__((packed));
 
 struct SendPacket

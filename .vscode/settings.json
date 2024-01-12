@@ -69,7 +69,39 @@
         "typeindex": "cpp",
         "typeinfo": "cpp",
         "variant": "cpp",
-        "*.ipp": "cpp"
+        "*.ipp": "cpp",
+        "csignal": "cpp",
+        "strstream": "cpp",
+        "codecvt": "cpp",
+        "coroutine": "cpp",
+        "regex": "cpp",
+        "source_location": "cpp",
+        "shared_mutex": "cpp",
+        "cfenv": "cpp"
     },
-    "cmake.sourceDirectory": "/home/mechax/cv-test/mechax_rm_cv/src/rm_serial_driver"
+    "cmake.sourceDirectory": "/home/mechax/cv-test/mechax_rm_cv/src/rm_serial_driver",
+    "python.autoComplete.extraPaths": [
+        "/home/mechax/sentry_vision2/build/turtlebot3_teleop",
+        "/home/mechax/sentry_vision2/install/turtlebot3_teleop/lib/python3.10/site-packages",
+        "/home/mechax/sentry_vision2/build/my_package",
+        "/home/mechax/sentry_vision2/install/my_package/lib/python3.10/site-packages",
+        "/home/mechax/sentry_vision2/install/fast_lio/local/lib/python3.10/dist-packages",
+        "/home/mechax/sentry_vision2/install/livox_ros_driver2/local/lib/python3.10/dist-packages",
+        "/home/mechax/sentry_vision2/install/auto_aim_interfaces/local/lib/python3.10/dist-packages",
+        "/home/mechax/livox_ros_driver2/install/livox_ros_driver2/local/lib/python3.10/dist-packages",
+        "/opt/ros/humble/lib/python3.10/site-packages",
+        "/opt/ros/humble/local/lib/python3.10/dist-packages"
+    ],
+    "python.analysis.extraPaths": [
+        "/home/mechax/sentry_vision2/build/turtlebot3_teleop",
+        "/home/mechax/sentry_vision2/install/turtlebot3_teleop/lib/python3.10/site-packages",
+        "/home/mechax/sentry_vision2/build/my_package",
+        "/home/mechax/sentry_vision2/install/my_package/lib/python3.10/site-packages",
+        "/home/mechax/sentry_vision2/install/fast_lio/local/lib/python3.10/dist-packages",
+        "/home/mechax/sentry_vision2/install/livox_ros_driver2/local/lib/python3.10/dist-packages",
+        "/home/mechax/sentry_vision2/install/auto_aim_interfaces/local/lib/python3.10/dist-packages",
+        "/home/mechax/livox_ros_driver2/install/livox_ros_driver2/local/lib/python3.10/dist-packages",
+        "/opt/ros/humble/lib/python3.10/site-packages",
+        "/opt/ros/humble/local/lib/python3.10/dist-packages"
+    ]
 }
