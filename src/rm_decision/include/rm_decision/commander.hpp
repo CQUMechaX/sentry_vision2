@@ -62,6 +62,8 @@ public:
   );
 
   void result_callback(const rclcpp_action::ClientGoalHandle<nav2_msgs::action::NavigateToPose>::WrappedResult & result);
+
+  double distence(geometry_msgs::msg::PoseStamped::SharedPtr a, geometry_msgs::msg::PoseStamped::SharedPtr b );
   
   geometry_msgs::msg::PoseStamped::SharedPtr currentpose;
   
@@ -91,6 +93,9 @@ public:
   uint blue_7_robot_hp;
   uint blue_outpost_hp;
   uint blue_base_hp;
+
+  // 敌方机器人坐标
+  geometry_msgs::msg::PoseStamped::SharedPtr enemypose;
 
   private:
   

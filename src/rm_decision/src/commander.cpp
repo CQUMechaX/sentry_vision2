@@ -11,6 +11,7 @@
 #include <unistd.h>
 #include <vector>
 #include <fstream>
+#include <cmath>
 #include "rm_decision/commander.hpp"
 
 using namespace std::chrono_literals;
@@ -61,8 +62,10 @@ namespace rm_decision
    void Commander::decision(){
       while (rclcpp::ok())
       {
+         double ememydistence = distence(enemypose,currentpose);
          // 读取信息
          // 判断信息
+         if(ememydistence <= 5.0) setState(std::make_shared<AttackState>(this));
          // 改变状态
          setState(std::make_shared<PatrolState>(this));
          // 发布命令
@@ -154,7 +157,7 @@ namespace rm_decision
          this->declare_parameter("poses_list", pose_list);
          auto pose_param = this->get_parameter("poses_list").as_double_array();
          RCLCPP_INFO(this->get_logger(), "开始传入导航点");
-         RCLCPP_INFO(this->get_logger(), "导航点个数: %ld",pose_param.size()/3);
+         RCLCPP_INFO(this->get_logger(), "随机导航点个数: %ld",pose_param.size()/3);
          for(uint i = 0; i < pose_param.size(); i=i+3){
          pose.position.x = pose_param[i];
          pose.position.y = pose_param[i+1];
@@ -211,7 +214,21 @@ namespace rm_decision
          commander->checkgoal = false;
       }
    }
+
+   // 追击模式
+   void AttackState::handle() {
+      double distance = commander->distence(commander->enemypose,commander->currentpose);
+      if(distance >= 1.0){
+         commander->nav_to_pose(commander->enemypose->pose);
+      }
+      else commander->nav_to_pose(commander->currentpose->pose);
+   }
    
+   //两点取距
+   double distence(geometry_msgs::msg::PoseStamped::SharedPtr a, geometry_msgs::msg::PoseStamped::SharedPtr b ){
+      double dis = sqrt(pow(a->pose.position.x - b->pose.position.x, 2) + pow(a->pose.position.y - b->pose.position.y, 2));
+      return dis;
+   }
 
 
 } // namespace rm_decision

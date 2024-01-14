@@ -175,20 +175,20 @@ void RMSerialDriver::receiveData()
                   receiving_data = false;
 
                   // 处理接收到的数据
-                  // if (data_buffer.size() == sizeof(ReceivePacket) - 1) {
+                  if (data_buffer.size() == sizeof(ReceivePacket) - 1) {
                   ReceivePacket packet = fromVector(data_buffer);
 
-                      /*if (!initial_set_param_ || packet.detect_color != previous_receive_color_) {
-                          setParam(rclcpp::Parameter("detect_color", packet.detect_color));
+                      if (!initial_set_param_ || packet.detect_color != previous_receive_color_) {
+                          // setParam(rclcpp::Parameter("detect_color", packet.detect_color));
                           previous_receive_color_ = packet.detect_color;
-                      }*/
+                      }
 
-                      /*if (packet.reset_tracker) {
+                      if (packet.reset_tracker) {
                           resetTracker();
-                      }*/
+                      }
 
                       // 创建坐标变换消息和发布
-                      /*geometry_msgs::msg::TransformStamped t;
+                      geometry_msgs::msg::TransformStamped t;
                       timestamp_offset_ = this->get_parameter("timestamp_offset").as_double();
                       t.header.stamp = this->now() + rclcpp::Duration::from_seconds(timestamp_offset_);
                       t.header.frame_id = "odom";
@@ -203,28 +203,28 @@ void RMSerialDriver::receiveData()
                           aiming_point_.pose.position.x = packet.aim_x;
                           aiming_point_.pose.position.y = packet.aim_y;
                           aiming_point_.pose.position.z = packet.aim_z;
-RCLCPP::INFO(get_logger(),"Receive Pose: x: %.2f , y: %.2f, z: %.2f"
-                                      packet.aim_x,packet.aim_y,packet.aim_z)
+// RCLCPP_INFO(get_logger(),"Receive Pose: x: %.2f , y: %.2f, z: %.2f"
+//                                       packet.aim_x,packet.aim_y,packet.aim_z);
                           marker_pub_->publish(aiming_point_);
                       }
-                  }*/
-                  geometry_msgs::msg::PoseStamped goal_msg;
-                  if(packet.x > 2)
-                  {
-                    packet.x = 2;
                   }
-    goal_msg.header.frame_id = "map";
-    goal_msg.header.stamp.sec = 0;
-    goal_msg.pose.position.x = packet.x;
-    goal_msg.pose.position.y = packet.y;
-    goal_msg.pose.position.z = 0.0;
-    goal_msg.pose.orientation.x = 0.0;
-    goal_msg.pose.orientation.y = 0.0;
-    goal_msg.pose.orientation.z = 0.0;
-    goal_msg.pose.orientation.w = 1.0;
-   RCLCPP_WARN(get_logger(), "[zbh] receive x=%f y=%f is_open=%s",
-    packet.x, packet.y, "open");
-                  pose_pub_->publish(goal_msg);
+  //                 geometry_msgs::msg::PoseStamped goal_msg;
+  //                 if(packet.x > 2)
+  //                 {
+  //                   packet.x = 2;
+  //                 }
+  //   goal_msg.header.frame_id = "map";
+  //   goal_msg.header.stamp.sec = 0;
+  //   goal_msg.pose.position.x = packet.x;
+  //   goal_msg.pose.position.y = packet.y;
+  //   goal_msg.pose.position.z = 0.0;
+  //   goal_msg.pose.orientation.x = 0.0;
+  //   goal_msg.pose.orientation.y = 0.0;
+  //   goal_msg.pose.orientation.z = 0.0;
+  //   goal_msg.pose.orientation.w = 1.0;
+  //  RCLCPP_WARN(get_logger(), "[zbh] receive x=%f y=%f is_open=%s",
+  //   packet.x, packet.y, "open");
+  //                 pose_pub_->publish(goal_msg);
                   //}
 
                   // 清空数据缓冲区
@@ -232,13 +232,13 @@ RCLCPP::INFO(get_logger(),"Receive Pose: x: %.2f , y: %.2f, z: %.2f"
               }
           } else if (header[0] == 0x5A) {
               // 如果检测到开始标识符（0x5A），开始接收数据
-               RCLCPP_INFO(rclcpp::get_logger("pose"),"receive:5A");
+              //  RCLCPP_INFO(rclcpp::get_logger("pose"),"receive:5A");
               receiving_data = true;
               data_buffer.push_back(header[0]);
           }
           else
           {
-            RCLCPP_INFO(rclcpp::get_logger("pose"),"wait");
+            // RCLCPP_INFO(rclcpp::get_logger("pose"),"wait");
           }
       } catch (const std::exception & ex) {
                   RCLCPP_ERROR_THROTTLE(
@@ -296,9 +296,9 @@ void RMSerialDriver::navsendData(const geometry_msgs::msg::Twist& cmd_vel)
   try {
     SendPacket packet;
     packet.frame_id = 1;
-    packet.nav_vx = cmd_vel.linear.y*2000;
+    packet.nav_vx = -cmd_vel.linear.y*2000;
     packet.nav_vy = cmd_vel.linear.x*2000;
-    packet.nav_yaw = -cmd_vel.angular.z*2000;
+    packet.nav_yaw = 0.0;
     crc16::Append_CRC16_Check_Sum(reinterpret_cast<uint8_t *>(&packet), sizeof(packet));
 
     std::vector<uint8_t> data = toVector(packet);

@@ -9,7 +9,7 @@
   <link name = "base_link" />
 
   <joint name="base_joint" type="fixed">
-    <origin xyz="-0.105 0 -0.460" rpy="0 0 ${pi}" />
+    <origin xyz="0.0 0.135 -0.20" rpy="0 ${-pi/4} 0" />
     <parent link="livox_frame" />
     <child link="base_link" />
     <axis xyz= "0 0 0" />
