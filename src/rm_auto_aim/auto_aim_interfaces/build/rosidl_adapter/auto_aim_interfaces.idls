@@ -1,8 +1,0 @@
-/home/mechax/ws_y/mechax_rm_cv/src/rm_auto_aim/auto_aim_interfaces/build/rosidl_adapter/auto_aim_interfaces:msg/Armor.idl
-/home/mechax/ws_y/mechax_rm_cv/src/rm_auto_aim/auto_aim_interfaces/build/rosidl_adapter/auto_aim_interfaces:msg/Armors.idl
-/home/mechax/ws_y/mechax_rm_cv/src/rm_auto_aim/auto_aim_interfaces/build/rosidl_adapter/auto_aim_interfaces:msg/Target.idl
-/home/mechax/ws_y/mechax_rm_cv/src/rm_auto_aim/auto_aim_interfaces/build/rosidl_adapter/auto_aim_interfaces:msg/DebugLight.idl
-/home/mechax/ws_y/mechax_rm_cv/src/rm_auto_aim/auto_aim_interfaces/build/rosidl_adapter/auto_aim_interfaces:msg/DebugLights.idl
-/home/mechax/ws_y/mechax_rm_cv/src/rm_auto_aim/auto_aim_interfaces/build/rosidl_adapter/auto_aim_interfaces:msg/DebugArmor.idl
-/home/mechax/ws_y/mechax_rm_cv/src/rm_auto_aim/auto_aim_interfaces/build/rosidl_adapter/auto_aim_interfaces:msg/DebugArmors.idl
-/home/mechax/ws_y/mechax_rm_cv/src/rm_auto_aim/auto_aim_interfaces/build/rosidl_adapter/auto_aim_interfaces:msg/TrackerInfo.idl

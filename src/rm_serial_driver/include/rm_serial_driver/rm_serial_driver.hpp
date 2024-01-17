@@ -25,9 +25,12 @@
 #include <vector>
 
 #include "auto_aim_interfaces/msg/target.hpp"
+#include "auto_aim_interfaces/msg/serial.hpp"
+#include "rm_serial_driver/packet.hpp"
 
 namespace rm_serial_driver
 {
+SendPacket sendpacket;
 class RMSerialDriver : public rclcpp::Node
 {
 public:
@@ -40,7 +43,9 @@ private:
 
   void receiveData();
 
-  void sendData(auto_aim_interfaces::msg::Target::SharedPtr msg);
+  void sendData();
+
+  void aimsendData(auto_aim_interfaces::msg::Serial msg);
 
   void navsendData(const geometry_msgs::msg::Twist& cmd_vel);
 
@@ -68,19 +73,23 @@ private:
 
   // Aimimg point receiving from serial port for visualization
   visualization_msgs::msg::Marker aiming_point_;
+  auto_aim_interfaces::msg::Serial serial_msg_;
 
   // Broadcast tf from odom to gimbal_link
   double timestamp_offset_ = 0;
   std::unique_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_;
 
   rclcpp::Subscription<auto_aim_interfaces::msg::Target>::SharedPtr target_sub_;
+  rclcpp::Subscription<auto_aim_interfaces::msg::Serial>::SharedPtr result_sub_;
   rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr nav_sub_;
 
   // For debug usage
   rclcpp::Publisher<std_msgs::msg::Float64>::SharedPtr latency_pub_;
   rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr marker_pub_;
+  rclcpp::Publisher<auto_aim_interfaces::msg::Serial>::SharedPtr serial_pub_;
   rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr pose_pub_;
   std::thread receive_thread_;
+  std::thread send_thread_;
   //申明发布目标点的发布者
   rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr received_pose_pub_;
 };

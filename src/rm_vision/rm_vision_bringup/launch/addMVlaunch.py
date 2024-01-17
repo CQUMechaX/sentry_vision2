@@ -61,14 +61,30 @@ def generate_launch_description():
         arguments=['--ros-args', '--log-level',
                    'armor_detector:='+launch_params['detector_log_level']],
     )
-        
+
+    trajectory_node = Node(
+        package='mechax_trajectory',
+        executable='mechax_trajectory',
+        name='mechax_trajectory',
+        output='both',
+        emulate_tty=True,
+        on_exit=Shutdown(),
+    )
+    
     delay_tracker_node = TimerAction(
         period=2.0,
         actions=[tracker_node],
     )
 
+    # delay_trajectory_node = TimerAction(
+    #     period=2.5,
+    #     actions=[trajectory_node],
+    # )
+
     return LaunchDescription([
         robot_state_publisher,
         cam_detector,
         detector_node,
+        delay_tracker_node,
+        trajectory_node,
     ])

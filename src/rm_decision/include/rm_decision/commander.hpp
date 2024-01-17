@@ -12,18 +12,27 @@
 #include "std_msgs/msg/float64.hpp"
 #include "std_msgs/msg/float64_multi_array.hpp"
 #include "geometry_msgs/msg/pose.hpp"
+#include "nav_msgs/msg/odometry.hpp"
 #include "action_msgs/msg/goal_status_array.hpp"
 
 #include <geometry_msgs/msg/detail/pose_stamped__struct.hpp>
 #include <memory>
 #include <iostream>
+#include <nav_msgs/msg/detail/odometry__struct.hpp>
+#include <rclcpp/node.hpp>
+#include <tf2_ros/buffer.h>
+#include <tf2_ros/transform_listener.h>
 #include <vector>
 #include <thread>
 #include <optional>
 #include <fstream>
 #include <string>
+#include <Eigen/Dense>
+#include <Eigen/Geometry>
+
 
 #include "rm_decision_interfaces/msg/all_robot_hp.hpp"
+#include "auto_aim_interfaces/msg/target.hpp"
 
 namespace rm_decision{
 
@@ -52,6 +61,7 @@ public:
   
   rclcpp_action::Client<nav2_msgs::action::NavigateToPose>::SendGoalOptions send_goal_options;
 
+
   void nav_to_pose(geometry_msgs::msg::Pose goal_pose);
 
   void goal_response_callback(rclcpp_action::ClientGoalHandle<nav2_msgs::action::NavigateToPose>::SharedPtr future);
@@ -63,7 +73,9 @@ public:
 
   void result_callback(const rclcpp_action::ClientGoalHandle<nav2_msgs::action::NavigateToPose>::WrappedResult & result);
 
-  double distence(geometry_msgs::msg::PoseStamped::SharedPtr a, geometry_msgs::msg::PoseStamped::SharedPtr b );
+  double distence(geometry_msgs::msg::PoseStamped::SharedPtr a);
+
+  void getcurrentpose();
   
   geometry_msgs::msg::PoseStamped::SharedPtr currentpose;
   
@@ -96,6 +108,7 @@ public:
 
   // 敌方机器人坐标
   geometry_msgs::msg::PoseStamped::SharedPtr enemypose;
+  bool tracking = false;
 
   private:
   
@@ -106,14 +119,19 @@ public:
   void executor();
   void setState(std::shared_ptr<State> state);
   void loadNavPoints();
-  void pose_callback(const geometry_msgs::msg::PoseStamped::SharedPtr msg);
+  void pose_callback(const nav_msgs::msg::Odometry::SharedPtr msg);
+  void aim_callback(const auto_aim_interfaces::msg::Target::SharedPtr msg);
 
   void hp_callback(const rm_decision_interfaces::msg::AllRobotHP::SharedPtr msg);
+  
 
   std::shared_ptr<State> currentState;
 
   rclcpp::Subscription<rm_decision_interfaces::msg::AllRobotHP>::SharedPtr hp_sub_;
-  rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr pose_sub_;
+  rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr pose_sub_;
+  rclcpp::Subscription<auto_aim_interfaces::msg::Target>::SharedPtr aim_sub_;
+  tf2_ros::Buffer buffer{get_clock()};
+  tf2_ros::TransformListener tflistener{buffer};
 };
 
 class PatrolState : public State {

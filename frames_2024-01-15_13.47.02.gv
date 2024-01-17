@@ -1,0 +1,10 @@
+digraph G {
+"livox_frame" -> "base_link"[label=" Broadcaster: default_authority\nAverage rate: 10000.0\nBuffer length: 0.0\nMost recent transform: 0.0\nOldest transform: 0.0\n"];
+"gimbal_link" -> "camera_link"[label=" Broadcaster: default_authority\nAverage rate: 10000.0\nBuffer length: 0.0\nMost recent transform: 0.0\nOldest transform: 0.0\n"];
+"odom" -> "gimbal_link"[label=" Broadcaster: default_authority\nAverage rate: 45.705\nBuffer length: 4.945\nMost recent transform: 1705297622.448797\nOldest transform: 1705297617.50401\n"];
+"camera_link" -> "camera_optical_frame"[label=" Broadcaster: default_authority\nAverage rate: 10000.0\nBuffer length: 0.0\nMost recent transform: 0.0\nOldest transform: 0.0\n"];
+edge [style=invis];
+ subgraph cluster_legend { style=bold; color=black; label ="view_frames Result";
+"Recorded at time: 1705297622.4494066"[ shape=plaintext ] ;
+}->"odom";
+}

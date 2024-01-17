@@ -3,6 +3,7 @@
 
 #include <tf2/LinearMath/Quaternion.h>
 
+#include <cstddef>
 #include <rclcpp/logging.hpp>
 #include <rclcpp/qos.hpp>
 #include <rclcpp/utilities.hpp>
@@ -18,6 +19,7 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include <chrono>
 
 #include "rm_serial_driver/crc.hpp"
 #include "rm_serial_driver/packet.hpp"
@@ -34,6 +36,9 @@ RMSerialDriver::RMSerialDriver(const rclcpp::NodeOptions & options)
   RCLCPP_INFO(get_logger(), "Start RMSerialDriver!");
 
   getParams();
+  // sendpacket.nav_vx = 0.0;
+  // sendpacket.nav_vy = 0.0;
+  // sendpacket.nav_yaw = 0.0;
 
   // TF broadcaster
   timestamp_offset_ = this->declare_parameter("timestamp_offset", 0.0);
@@ -42,6 +47,7 @@ RMSerialDriver::RMSerialDriver(const rclcpp::NodeOptions & options)
   // Create Publisher
   latency_pub_ = this->create_publisher<std_msgs::msg::Float64>("/latency", 10);
   marker_pub_ = this->create_publisher<visualization_msgs::msg::Marker>("/aiming_point", 10);
+  serial_pub_ = this->create_publisher<auto_aim_interfaces::msg::Serial>("/angle/init", 10);
   pose_pub_ = this->create_publisher<geometry_msgs::msg::PoseStamped>("/received_goal_pose", 10);
   // Detect parameter client
   detector_param_client_ = std::make_shared<rclcpp::AsyncParametersClient>(this, "armor_detector");
@@ -54,6 +60,7 @@ RMSerialDriver::RMSerialDriver(const rclcpp::NodeOptions & options)
     if (!serial_driver_->port()->is_open()) {
       serial_driver_->port()->open();
       receive_thread_ = std::thread(&RMSerialDriver::receiveData, this);
+      send_thread_ = std::thread(&RMSerialDriver::sendData, this);
     }
   } catch (const std::exception & ex) {
     RCLCPP_ERROR(
@@ -74,9 +81,9 @@ RMSerialDriver::RMSerialDriver(const rclcpp::NodeOptions & options)
 
   // Create Subscription
 // 目标数据订阅，接收需要发送的信息
-  target_sub_ = this->create_subscription<auto_aim_interfaces::msg::Target>(
-    "/tracker/target", rclcpp::SensorDataQoS(),
-    std::bind(&RMSerialDriver::sendData, this, std::placeholders::_1));
+  result_sub_ = this->create_subscription<auto_aim_interfaces::msg::Serial>(
+    "/trajectory/result", rclcpp::SensorDataQoS(),
+    std::bind(&RMSerialDriver::aimsendData, this, std::placeholders::_1));
 // 导航数据订阅，接收需要移动的信息
   nav_sub_ = this->create_subscription<geometry_msgs::msg::Twist>(
     "cmd_vel", rclcpp::SensorDataQoS(),
@@ -91,6 +98,10 @@ RMSerialDriver::~RMSerialDriver()
 
   if (serial_driver_->port()->is_open()) {
     serial_driver_->port()->close();
+  }
+
+  if (send_thread_.joinable()) {
+    send_thread_.join();
   }
 
   if (owned_ctx_) {
@@ -131,7 +142,7 @@ RMSerialDriver::~RMSerialDriver()
   //         t.transform.rotation = tf2::toMsg(q);
   //         tf_broadcaster_->sendTransform(t);
 
-  //         if (abs(packet.aim_x) > 0.01) {
+  //         if (abs(packet.aim_x) > 0.cmd_vel.linear.x*200001) {
   //           aiming_point_.header.stamp = this->now();
   //           aiming_point_.pose.position.x = packet.aim_x;
   //           aiming_point_.pose.position.y = packet.aim_y;
@@ -179,7 +190,7 @@ void RMSerialDriver::receiveData()
                   ReceivePacket packet = fromVector(data_buffer);
 
                       if (!initial_set_param_ || packet.detect_color != previous_receive_color_) {
-                          // setParam(rclcpp::Parameter("detect_color", packet.detect_color));
+                          setParam(rclcpp::Parameter("detect_color", packet.detect_color));
                           previous_receive_color_ = packet.detect_color;
                       }
 
@@ -194,19 +205,14 @@ void RMSerialDriver::receiveData()
                       t.header.frame_id = "odom";
                       t.child_frame_id = "gimbal_link";
                       tf2::Quaternion q;
-                      q.setRPY(packet.roll, packet.pitch, packet.yaw);
+                      q.setRPY(packet.roll / 57.3f, packet.pitch / 57.3f, packet.yaw / 57.3f);
                       t.transform.rotation = tf2::toMsg(q);
                       tf_broadcaster_->sendTransform(t);
 
-                      if (abs(packet.aim_x) > 0.01) {
-                          aiming_point_.header.stamp = this->now();
-                          aiming_point_.pose.position.x = packet.aim_x;
-                          aiming_point_.pose.position.y = packet.aim_y;
-                          aiming_point_.pose.position.z = packet.aim_z;
-// RCLCPP_INFO(get_logger(),"Receive Pose: x: %.2f , y: %.2f, z: %.2f"
-//                                       packet.aim_x,packet.aim_y,packet.aim_z);
-                          marker_pub_->publish(aiming_point_);
-                      }
+                      serial_msg_.pitch = packet.pitch;
+                      serial_msg_.yaw = packet.yaw;
+                      serial_pub_->publish(serial_msg_);
+                      // RCLCPP_INFO(get_logger(), "receive");
                   }
   //                 geometry_msgs::msg::PoseStamped goal_msg;
   //                 if(packet.x > 2)
@@ -249,43 +255,57 @@ void RMSerialDriver::receiveData()
 
 }
 
-void RMSerialDriver::sendData(const auto_aim_interfaces::msg::Target::SharedPtr msg)
+void RMSerialDriver::sendData() {
+    while (rclcpp::ok()) {
+        // 发送数据的代码
+         try{ 
+          crc16::Append_CRC16_Check_Sum(reinterpret_cast<uint8_t *>(&sendpacket), sizeof(sendpacket));
+
+          std::vector<uint8_t> data = toVector(sendpacket);
+
+          serial_driver_->port()->send(data);
+          // for(int i=0;i<static_cast<int>(data.size());i++)
+          // {
+          //   RCLCPP_INFO(get_logger(), "send data %d: %u", i, data[i]);
+          // }
+          RCLCPP_INFO(get_logger(), "send data y: %f p: %f", sendpacket.yaw, sendpacket.pitch);
+    } catch (const std::exception & ex) {
+    RCLCPP_ERROR(get_logger(), "Error while sending data: %s", ex.what());
+    reopenPort();
+    }
+      // 等待100毫秒（10Hz）
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+  }
+}
+
+void RMSerialDriver::aimsendData(const auto_aim_interfaces::msg::Serial msg)
 {
   const static std::map<std::string, uint8_t> id_unit8_map{
     {"", 0},  {"outpost", 0}, {"1", 1}, {"1", 1},     {"2", 2},
     {"3", 3}, {"4", 4},       {"5", 5}, {"guard", 6}, {"base", 7}};
 
-  try {
-    SendPacket packet;
-    packet.frame_id = 0;
-    packet.tracking = msg->tracking;
-    packet.id = id_unit8_map.at(msg->id);
-    packet.armors_num = msg->armors_num;
-    packet.x = msg->position.x;
-    packet.y = msg->position.y;
-    packet.z = msg->position.z;
-    packet.yaw = msg->yaw;
-    packet.vx = msg->velocity.x;
-    packet.vy = msg->velocity.y;
-    packet.vz = msg->velocity.z;
-    packet.v_yaw = msg->v_yaw;
-    packet.r1 = msg->radius_1;
-    packet.r2 = msg->radius_2;
-    packet.dz = msg->dz;
-    crc16::Append_CRC16_Check_Sum(reinterpret_cast<uint8_t *>(&packet), sizeof(packet));
+  // try {
+    sendpacket.is_tracking = msg.is_tracking;
+    sendpacket.yaw = msg.yaw;
+    sendpacket.pitch = msg.pitch;
+    if(sendpacket.is_tracking)
+    {
+        RCLCPP_INFO(get_logger(), "tracking");
+    }
+  //   crc16::Append_CRC16_Check_Sum(reinterpret_cast<uint8_t *>(&sendpacket), sizeof(sendpacket));
 
-    std::vector<uint8_t> data = toVector(packet);
+  //   std::vector<uint8_t> data = toVector(sendpacket);
 
-    serial_driver_->port()->send(data);
+  //   serial_driver_->port()->send(data);
 
     std_msgs::msg::Float64 latency;
-    latency.data = (this->now() - msg->header.stamp).seconds() * 1000.0;
+    latency.data = (this->now() - msg.header.stamp).seconds() * 1000.0;
     RCLCPP_DEBUG_STREAM(get_logger(), "Total latency: " + std::to_string(latency.data) + "ms");
     latency_pub_->publish(latency);
-  } catch (const std::exception & ex) {
-    RCLCPP_ERROR(get_logger(), "Error while sending data: %s", ex.what());
-    reopenPort();
-  }
+  // } catch (const std::exception & ex) {
+  //   RCLCPP_ERROR(get_logger(), "Error while sending data: %s", ex.what());
+  //   reopenPort();
+  // }
 }
 void RMSerialDriver::navsendData(const geometry_msgs::msg::Twist& cmd_vel)
 {
@@ -293,21 +313,23 @@ void RMSerialDriver::navsendData(const geometry_msgs::msg::Twist& cmd_vel)
     {"", 0},  {"outpost", 0}, {"1", 1}, {"1", 1},     {"2", 2},
     {"3", 3}, {"4", 4},       {"5", 5}, {"guard", 6}, {"base", 7}};
 
-  try {
-    SendPacket packet;
-    packet.frame_id = 1;
-    packet.nav_vx = -cmd_vel.linear.y*2000;
-    packet.nav_vy = cmd_vel.linear.x*2000;
-    packet.nav_yaw = 0.0;
-    crc16::Append_CRC16_Check_Sum(reinterpret_cast<uint8_t *>(&packet), sizeof(packet));
+  // try {
+    sendpacket.naving = 1;
+    sendpacket.nav_vx = -cmd_vel.linear.y*2000;
+    sendpacket.nav_vy = cmd_vel.linear.x*2000;
+    if(sendpacket.naving)
+    {
+        RCLCPP_INFO(get_logger(), "naving");
+    }
+//     crc16::Append_CRC16_Check_Sum(reinterpret_cast<uint8_t *>(&packet), sizeof(packet));
 
-    std::vector<uint8_t> data = toVector(packet);
-    serial_driver_->port()->send(data);
-RCLCPP_WARN(get_logger(), "[zbh] data: %u vel_x=%f vel_y=%f vel_ang=%f", data[0], cmd_vel.linear.x, cmd_vel.linear.y, cmd_vel.angular.z);
-  } catch (const std::exception & ex) {
-    RCLCPP_ERROR(get_logger(), "Error while sending data: %s", ex.what());
-    reopenPort();
-  }
+//     std::vector<uint8_t> data = toVector(packet);
+//     serial_driver_->port()->send(data);
+// RCLCPP_WARN(get_logger(), "[zbh] data: %u vel_x=%f vel_y=%f vel_ang=%f", data[0], cmd_vel.linear.x, cmd_vel.linear.y, cmd_vel.angular.z);
+//   } catch (const std::exception & ex) {
+//     RCLCPP_ERROR(get_logger(), "Error while sending data: %s", ex.what());
+//     reopenPort();
+  // }
 }
 void RMSerialDriver::getParams()
 {
@@ -411,7 +433,7 @@ void RMSerialDriver::reopenPort()
 void RMSerialDriver::setParam(const rclcpp::Parameter & param)
 {
   if (!detector_param_client_->service_is_ready()) {
-    RCLCPP_WARN(get_logger(), "Service not ready, skipping parameter set");
+    //RCLCPP_WARN(get_logger(), "Service not ready, skipping parameter set");
     return;
   }
 

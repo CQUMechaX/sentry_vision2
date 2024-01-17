@@ -42,25 +42,12 @@ struct ReceivePacket
 struct SendPacket
 {
   uint8_t header = 0xA5;
-  uint8_t frame_id;        //识别码 视觉信息发0 导航信息发1
-  bool tracking : 1;
-  uint8_t id : 3;          // 0-outpost 6-guard 7-base
-  uint8_t armors_num : 3;  // 2-balance 3-outpost 4-normal
-  uint8_t reserved : 1;
-  float x;
-  float y;
-  float z;
+  bool is_tracking = false;
+  bool naving = false;
   float yaw;
-  float vx;
-  float vy;
-  float vz;
-  float v_yaw; 
-  float r1;
-  float r2;
-  float dz;
-  float nav_vx;             //nav前缀的是导航信息
+  float pitch;
+  float nav_vx;
   float nav_vy;
-  float nav_yaw;
   uint16_t checksum = 0;
 } __attribute__((packed));
 

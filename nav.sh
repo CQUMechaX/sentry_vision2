@@ -1,3 +1,6 @@
+#! /bin/bash
+source ~/.bashrc
+cd /home/mechax/sentry_vision2
 colcon build --symlink-install --cmake-args -DCMAKE_EXPORT_COMPILE_COMMANDS=ON 
 cmds=(  "ros2 launch rm_bringup bringup.launch.py"
 	"ros2 launch livox_ros_driver2 msg_MID360_launch.py"
@@ -9,12 +12,12 @@ cmds=(  "ros2 launch rm_bringup bringup.launch.py"
 	"ros2 launch rm_navigation bringup_launch.py "
 	#"ros2 launch rm_decision my_launch.py"
 	"ros2 launch rm_serial_driver serial_driver.launch.py"
-	#"ros2 launch rm_vision_bringup vision_bringup.launch.py"
+	"ros2 launch rm_vision_bringup vision_bringup.launch.py"
 	)
 
 for cmd in "${cmds[@]}";
 do
 	echo Current CMD : "$cmd"
-	gnome-terminal -- bash -c "cd $(pwd);source install/setup.bash;$cmd;exec bash;"
+	gnome-terminal -- bash -ic "source ~/.bashrc;cd $(pwd);source install/setup.bash;$cmd;"
 	sleep 0.2
 done

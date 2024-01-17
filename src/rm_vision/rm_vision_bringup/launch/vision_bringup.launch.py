@@ -74,11 +74,20 @@ def generate_launch_description():
                        'serial_driver:='+launch_params['serial_log_level']],
     )
 
+    trajectory_node = Node(
+        package='mechax_trajectory',
+        executable='mechax_trajectory',
+        name='mechax_trajectory',
+        output='both',
+        emulate_tty=True,
+        on_exit=Shutdown(),
+    )
+
     # delay_serial_node 会以1.5秒的周期触发执行串口驱动节点，
     # 而 delay_tracker_node 会以2.0秒的周期触发执行追踪节点。
     delay_serial_node = TimerAction(
-        period=1.5,
-        actions=[serial_driver_node],
+       period=1.5,
+       actions=[serial_driver_node],
     )
 
     delay_tracker_node = TimerAction(
@@ -86,9 +95,15 @@ def generate_launch_description():
         actions=[tracker_node],
     )
 
+    # delay_trajectory_node = TimerAction(
+    #     period=2.5,
+    #     actions=[trajectory_node],
+    # )
+
     return LaunchDescription([
         robot_state_publisher, # 可视化
         cam_detector,          # 相机+detector
         delay_serial_node,     # 串口通信
         delay_tracker_node,    # tracker
+        trajectory_node, # 轨迹规划,弹道解算
     ])

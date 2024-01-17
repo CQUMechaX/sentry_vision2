@@ -6,5 +6,25 @@
         "string": "cpp",
         "string_view": "cpp",
         "ostream": "cpp"
-    }
+    },
+    "python.autoComplete.extraPaths": [
+        "/home/mechax/sentry_vision2/build/turtlebot3_teleop",
+        "/home/mechax/Desktop/sentry_vision_new/install/turtlebot3_teleop/lib/python3.10/site-packages",
+        "/home/mechax/sentry_vision2/build/my_package",
+        "/home/mechax/Desktop/sentry_vision_new/install/my_package/lib/python3.10/site-packages",
+        "/home/mechax/Desktop/sentry_vision_new/install/fast_lio/local/lib/python3.10/dist-packages",
+        "/home/mechax/livox_ros_driver2/install/livox_ros_driver2/local/lib/python3.10/dist-packages",
+        "/opt/ros/humble/lib/python3.10/site-packages",
+        "/opt/ros/humble/local/lib/python3.10/dist-packages"
+    ],
+    "python.analysis.extraPaths": [
+        "/home/mechax/sentry_vision2/build/turtlebot3_teleop",
+        "/home/mechax/Desktop/sentry_vision_new/install/turtlebot3_teleop/lib/python3.10/site-packages",
+        "/home/mechax/sentry_vision2/build/my_package",
+        "/home/mechax/Desktop/sentry_vision_new/install/my_package/lib/python3.10/site-packages",
+        "/home/mechax/Desktop/sentry_vision_new/install/fast_lio/local/lib/python3.10/dist-packages",
+        "/home/mechax/livox_ros_driver2/install/livox_ros_driver2/local/lib/python3.10/dist-packages",
+        "/opt/ros/humble/lib/python3.10/site-packages",
+        "/opt/ros/humble/local/lib/python3.10/dist-packages"
+    ]
 }

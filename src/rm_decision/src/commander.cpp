@@ -1,4 +1,8 @@
+#include <geometry_msgs/msg/detail/point_stamped__struct.hpp>
 #include <geometry_msgs/msg/detail/pose_stamped__struct.hpp>
+#include <geometry_msgs/msg/detail/transform_stamped__struct.hpp>
+#include <nav_msgs/msg/detail/odometry__struct.hpp>
+#include <rclcpp/duration.hpp>
 #include <rclcpp/logging.hpp>
 #include <rclcpp/rclcpp.hpp>
 #include <rclcpp_action/rclcpp_action.hpp>
@@ -6,6 +10,7 @@
 
 #include <memory>
 #include <iostream>
+#include <tf2_ros/transform_listener.h>
 #include <thread>
 #include <string>
 #include <unistd.h>
@@ -39,8 +44,11 @@ namespace rm_decision
       // 创建订阅(订阅裁判系统的信息)
       hp_sub_ = this->create_subscription<rm_decision_interfaces::msg::AllRobotHP>(
          "all_robot_hp", 10, std::bind(&Commander::hp_callback, this, std::placeholders::_1));
-      pose_sub_ = this->create_subscription<geometry_msgs::msg::PoseStamped>(
-         "odom", 10, std::bind(&Commander::pose_callback, this, std::placeholders::_1));
+      pose_sub_ = this->create_subscription<nav_msgs::msg::Odometry>(
+         "Odometry", 10, std::bind(&Commander::pose_callback, this, std::placeholders::_1));
+      aim_sub_ = this->create_subscription<auto_aim_interfaces::msg::Target>(
+         "/tracker/target", rclcpp::SensorDataQoS(),
+    std::bind(&Commander::aim_callback, this, std::placeholders::_1));
       // 创建线程（处理信息和发布命令）
       
       commander_thread_ = std::thread(&Commander::decision, this);
@@ -62,10 +70,10 @@ namespace rm_decision
    void Commander::decision(){
       while (rclcpp::ok())
       {
-         double ememydistence = distence(enemypose,currentpose);
          // 读取信息
+         getcurrentpose();
          // 判断信息
-         if(ememydistence <= 5.0) setState(std::make_shared<AttackState>(this));
+         if(distence(enemypose) <= 5.0 && tracking == true) setState(std::make_shared<AttackState>(this));
          // 改变状态
          setState(std::make_shared<PatrolState>(this));
          // 发布命令
@@ -191,8 +199,28 @@ namespace rm_decision
       blue_base_hp = msg->blue_base_hp;
       }
    
-   void Commander::pose_callback(const geometry_msgs::msg::PoseStamped::SharedPtr msg) {
-      currentpose = msg;
+   void Commander::pose_callback(const nav_msgs::msg::Odometry::SharedPtr msg) {
+      currentpose->pose = msg->pose.pose;
+   }
+
+   void Commander::aim_callback(const auto_aim_interfaces::msg::Target::SharedPtr msg) {
+      tracking = msg->tracking;
+      if(tracking){
+         geometry_msgs::msg::PointStamped msgstamp;
+         msgstamp.header.stamp = this->now();
+         msgstamp.header.frame_id = "base_link";
+         msgstamp.point = msg->position;
+         geometry_msgs::msg::PointStamped enemy_msg;
+         enemy_msg = buffer.transform(msgstamp,"map");
+
+         geometry_msgs::msg::PoseStamped pose_stamped;
+         enemypose->header.stamp = this->now();
+         enemypose->header.frame_id = "map";
+         enemypose->pose.position.x = enemy_msg.point.x;
+         enemypose->pose.position.y = enemy_msg.point.y;
+         enemypose->pose.position.z = enemy_msg.point.z;
+         RCLCPP_INFO(this->get_logger(), "敌方位置: %.2f, %.2f, %.2f",enemypose->pose.position.x ,enemypose->pose.position.y,enemypose->pose.position.z);
+      }
    }
 
    // 巡逻模式
@@ -217,17 +245,28 @@ namespace rm_decision
 
    // 追击模式
    void AttackState::handle() {
-      double distance = commander->distence(commander->enemypose,commander->currentpose);
-      if(distance >= 1.0){
+      if(commander->distence(commander->enemypose) >= 1.0){
          commander->nav_to_pose(commander->enemypose->pose);
       }
       else commander->nav_to_pose(commander->currentpose->pose);
    }
    
-   //两点取距
-   double distence(geometry_msgs::msg::PoseStamped::SharedPtr a, geometry_msgs::msg::PoseStamped::SharedPtr b ){
-      double dis = sqrt(pow(a->pose.position.x - b->pose.position.x, 2) + pow(a->pose.position.y - b->pose.position.y, 2));
+   //取距
+   double Commander::distence(const geometry_msgs::msg::PoseStamped::SharedPtr a){
+      double dis = sqrt(pow(a->pose.position.x , 2) + pow(a->pose.position.y, 2));
       return dis;
+   }
+
+   void Commander::getcurrentpose(){
+      geometry_msgs::msg::TransformStamped odom_msg;
+      odom_msg = buffer.lookupTransform("map", "base_link",this->now());
+      currentpose->header.stamp = this->now();
+      currentpose->header.frame_id = "map";
+      currentpose->pose.position.x = odom_msg.transform.translation.x;
+      currentpose->pose.position.y = odom_msg.transform.translation.y;
+      currentpose->pose.position.z = odom_msg.transform.translation.z;
+      currentpose->pose.orientation = odom_msg.transform.rotation;
+      RCLCPP_INFO(this->get_logger(), "当前位置: %.2f, %.2f, %.2f",currentpose->pose.position.x,currentpose->pose.position.y,currentpose->pose.position.z);
    }
 
 
