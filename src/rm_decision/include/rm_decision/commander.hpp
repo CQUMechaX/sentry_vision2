@@ -62,7 +62,7 @@ public:
   rclcpp_action::Client<nav2_msgs::action::NavigateToPose>::SendGoalOptions send_goal_options;
 
 
-  void nav_to_pose(geometry_msgs::msg::Pose goal_pose);
+  void nav_to_pose(geometry_msgs::msg::PoseStamped goal_pose);
 
   void goal_response_callback(rclcpp_action::ClientGoalHandle<nav2_msgs::action::NavigateToPose>::SharedPtr future);
 
@@ -73,16 +73,16 @@ public:
 
   void result_callback(const rclcpp_action::ClientGoalHandle<nav2_msgs::action::NavigateToPose>::WrappedResult & result);
 
-  double distence(geometry_msgs::msg::PoseStamped::SharedPtr a);
+  double distence(geometry_msgs::msg::PoseStamped a);
 
   void getcurrentpose();
   
-  geometry_msgs::msg::PoseStamped::SharedPtr currentpose;
+  geometry_msgs::msg::PoseStamped currentpose;
   
-  std::vector<geometry_msgs::msg::Pose> nav_points_;
+  std::vector<geometry_msgs::msg::PoseStamped> nav_points_;
   
-  std::vector<geometry_msgs::msg::Pose>::iterator random;
-  geometry_msgs::msg::Pose goal;
+  std::vector<geometry_msgs::msg::PoseStamped>::iterator random;
+  geometry_msgs::msg::PoseStamped goal;
   std::shared_future<rclcpp_action::ClientGoalHandle<nav2_msgs::action::NavigateToPose>::SharedPtr> send_goal_future;
 
   bool checkgoal = true;
@@ -107,7 +107,7 @@ public:
   uint blue_base_hp;
 
   // 敌方机器人坐标
-  geometry_msgs::msg::PoseStamped::SharedPtr enemypose;
+  geometry_msgs::msg::PoseStamped enemypose;
   bool tracking = false;
 
   private:

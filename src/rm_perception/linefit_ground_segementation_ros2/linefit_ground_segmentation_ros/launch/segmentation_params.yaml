@@ -21,7 +21,7 @@ ground_segmentation:
     gravity_aligned_frame: ""   # Frame which has its z axis aligned with gravity. (Sensor frame if empty.)
 
     latch: false                # latch output topics or not
-    visualize: flase            # visualize segmentation result - USE ONLY FOR DEBUGGING
+    visualize: false            # visualize segmentation result - USE ONLY FOR DEBUGGING
 
     input_topic: "livox/lidar/pointcloud"
     obstacle_output_topic: "segmentation/obstacle"

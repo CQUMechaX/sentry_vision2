@@ -1,6 +1,5 @@
 #! /bin/bash
-source ~/.bashrc
-cd /home/mechax/sentry_vision2
+
 colcon build --symlink-install --cmake-args -DCMAKE_EXPORT_COMPILE_COMMANDS=ON 
 cmds=(  "ros2 launch rm_bringup bringup.launch.py"
 	"ros2 launch livox_ros_driver2 msg_MID360_launch.py"
@@ -11,7 +10,7 @@ cmds=(  "ros2 launch rm_bringup bringup.launch.py"
 	"ros2 launch icp_localization_ros2 bringup.launch.py"
 	"ros2 launch rm_navigation bringup_launch.py "
 	#"ros2 launch rm_decision my_launch.py"
-	"ros2 launch rm_serial_driver serial_driver.launch.py"
+	#"ros2 launch rm_serial_driver serial_driver.launch.py"
 	"ros2 launch rm_vision_bringup vision_bringup.launch.py"
 	)
 

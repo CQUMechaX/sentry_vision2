@@ -4,6 +4,8 @@
 #ifndef RM_SERIAL_DRIVER__RM_SERIAL_DRIVER_HPP_
 #define RM_SERIAL_DRIVER__RM_SERIAL_DRIVER_HPP_
 
+#include <geometry_msgs/msg/detail/twist__struct.hpp>
+#include <rclcpp/node.hpp>
 #include <tf2_ros/transform_broadcaster.h>
 
 #include <geometry_msgs/msg/transform_stamped.hpp>
@@ -14,8 +16,6 @@
 #include <std_msgs/msg/float64.hpp>
 #include <std_srvs/srv/trigger.hpp>
 #include <visualization_msgs/msg/marker.hpp>
-#include <geometry_msgs/msg/twist.hpp>
-
 
 // C++ system
 #include <future>
@@ -25,27 +25,24 @@
 #include <vector>
 
 #include "auto_aim_interfaces/msg/target.hpp"
-#include "auto_aim_interfaces/msg/serial.hpp"
-#include "rm_serial_driver/packet.hpp"
+#include "auto_aim_interfaces/msg/send_serial.hpp"
+#include "auto_aim_interfaces/msg/receive_serial.hpp"
 
 namespace rm_serial_driver
 {
-SendPacket sendpacket;
 class RMSerialDriver : public rclcpp::Node
 {
 public:
-  explicit RMSerialDriver(const rclcpp::NodeOptions & options); // 重载构造函数
+  explicit RMSerialDriver(const rclcpp::NodeOptions & options);
 
-  ~RMSerialDriver() override; // 析构函数
-  
+  ~RMSerialDriver() override;
+
 private:
   void getParams();
 
   void receiveData();
 
-  void sendData();
-
-  void aimsendData(auto_aim_interfaces::msg::Serial msg);
+  void aimsendData(auto_aim_interfaces::msg::SendSerial msg);
 
   void navsendData(const geometry_msgs::msg::Twist& cmd_vel);
 
@@ -69,29 +66,31 @@ private:
   ResultFuturePtr set_param_future_;
 
   // Service client to reset tracker
-  rclcpp::Client<std_srvs::srv::Trigger>::SharedPtr reset_tracker_client_;
+  rclcpp::Client<std_srvs::srv::Trigger>::SharedPtr leftreset_tracker_client_;
+  rclcpp::Client<std_srvs::srv::Trigger>::SharedPtr rightreset_tracker_client_;
 
   // Aimimg point receiving from serial port for visualization
   visualization_msgs::msg::Marker aiming_point_;
-  auto_aim_interfaces::msg::Serial serial_msg_;
-
+  auto_aim_interfaces::msg::ReceiveSerial leftreceive_serial_msg_;
+  auto_aim_interfaces::msg::ReceiveSerial rightreceive_serial_msg_;
   // Broadcast tf from odom to gimbal_link
-  double timestamp_offset_ = 0;
+  double lefttimestamp_offset_ = 0;
+  double righttimestamp_offset_ = 0;
   std::unique_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_;
 
   rclcpp::Subscription<auto_aim_interfaces::msg::Target>::SharedPtr target_sub_;
-  rclcpp::Subscription<auto_aim_interfaces::msg::Serial>::SharedPtr result_sub_;
+  rclcpp::Subscription<auto_aim_interfaces::msg::SendSerial>::SharedPtr result_sub_;
   rclcpp::Subscription<geometry_msgs::msg::Twist>::SharedPtr nav_sub_;
 
   // For debug usage
   rclcpp::Publisher<std_msgs::msg::Float64>::SharedPtr latency_pub_;
   rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr marker_pub_;
-  rclcpp::Publisher<auto_aim_interfaces::msg::Serial>::SharedPtr serial_pub_;
-  rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr pose_pub_;
+  rclcpp::Publisher<auto_aim_interfaces::msg::ReceiveSerial>::SharedPtr leftserial_pub_;
+  rclcpp::Publisher<auto_aim_interfaces::msg::ReceiveSerial>::SharedPtr rightserial_pub_;
+
   std::thread receive_thread_;
-  std::thread send_thread_;
-  //申明发布目标点的发布者
-  rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr received_pose_pub_;
+  std::thread aimsend_thread_;
+  std::thread navsend_thread_;
 };
 }  // namespace rm_serial_driver
 

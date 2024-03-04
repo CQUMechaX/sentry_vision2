@@ -98,16 +98,13 @@ namespace rm_decision
    void Commander::setState(std::shared_ptr<State> state) {
       currentState = state;
    }
-
    
    
-   // 导航到点
-   void Commander::nav_to_pose(geometry_msgs::msg::Pose goal_pose){
+   // 导航到点   
+   void Commander::nav_to_pose(geometry_msgs::msg::PoseStamped goal_pose){
       nav_to_pose_client->wait_for_action_server();
       auto goal_msg = nav2_msgs::action::NavigateToPose::Goal();
-      goal_msg.pose.pose = goal_pose;
-      goal_msg.pose.header.frame_id = "map";
-      goal_msg.pose.header.stamp = this->now();
+      goal_msg.pose = goal_pose;
       goal_msg.behavior_tree = "";
 
       send_goal_future = nav_to_pose_client->async_send_goal(goal_msg,send_goal_options);
@@ -160,22 +157,24 @@ namespace rm_decision
    
    // 读取导航点
    void Commander::loadNavPoints() {
-         geometry_msgs::msg::Pose pose;
+         geometry_msgs::msg::PoseStamped pose;
          std::vector<double> pose_list;
          this->declare_parameter("poses_list", pose_list);
          auto pose_param = this->get_parameter("poses_list").as_double_array();
          RCLCPP_INFO(this->get_logger(), "开始传入导航点");
          RCLCPP_INFO(this->get_logger(), "随机导航点个数: %ld",pose_param.size()/3);
          for(uint i = 0; i < pose_param.size(); i=i+3){
-         pose.position.x = pose_param[i];
-         pose.position.y = pose_param[i+1];
-         pose.position.z = pose_param[i+2];
-         pose.orientation.x = 0.0;
-         pose.orientation.y = 0.0; 
-         pose.orientation.z = 0.0;
-         pose.orientation.w = 1.0;
+         pose.header.frame_id ="map";
+         pose.header.stamp = this->now();
+         pose.pose.position.x = pose_param[i];
+         pose.pose.position.y = pose_param[i+1];
+         pose.pose.position.z = pose_param[i+2];
+         pose.pose.orientation.x = 0.0;
+         pose.pose.orientation.y = 0.0;          
+         pose.pose.orientation.z = 0.0;         
+         pose.pose.orientation.w = 1.0;
          nav_points_.push_back(pose);
-         RCLCPP_INFO(this->get_logger(), "传入第%d个导航点: %.2f, %.2f, %.2f",(i+3)/3,pose.position.x,pose.position.y,pose.position.z);
+         RCLCPP_INFO(this->get_logger(), "传入第%d个导航点: %.2f, %.2f, %.2f",(i+3)/3,pose.pose.position.x,pose.pose.position.y,pose.pose.position.z);
          }
    }
    
@@ -200,26 +199,19 @@ namespace rm_decision
       }
    
    void Commander::pose_callback(const nav_msgs::msg::Odometry::SharedPtr msg) {
-      currentpose->pose = msg->pose.pose;
+      currentpose.pose = msg->pose.pose;
    }
 
    void Commander::aim_callback(const auto_aim_interfaces::msg::Target::SharedPtr msg) {
       tracking = msg->tracking;
       if(tracking){
-         geometry_msgs::msg::PointStamped msgstamp;
-         msgstamp.header.stamp = this->now();
-         msgstamp.header.frame_id = "base_link";
-         msgstamp.point = msg->position;
-         geometry_msgs::msg::PointStamped enemy_msg;
-         enemy_msg = buffer.transform(msgstamp,"map");
-
          geometry_msgs::msg::PoseStamped pose_stamped;
-         enemypose->header.stamp = this->now();
-         enemypose->header.frame_id = "map";
-         enemypose->pose.position.x = enemy_msg.point.x;
-         enemypose->pose.position.y = enemy_msg.point.y;
-         enemypose->pose.position.z = enemy_msg.point.z;
-         RCLCPP_INFO(this->get_logger(), "敌方位置: %.2f, %.2f, %.2f",enemypose->pose.position.x ,enemypose->pose.position.y,enemypose->pose.position.z);
+         enemypose.header.stamp = this->now();
+         enemypose.header.frame_id = "livox_frame";
+         enemypose.pose.position.x = msg->position.x;
+         enemypose.pose.position.y = msg->position.y;
+         enemypose.pose.position.z = msg->position.z;
+         RCLCPP_INFO(this->get_logger(), "敌方位置: %.2f, %.2f, %.2f",enemypose.pose.position.x ,enemypose.pose.position.y,enemypose.pose.position.z);
       }
    }
 
@@ -246,27 +238,27 @@ namespace rm_decision
    // 追击模式
    void AttackState::handle() {
       if(commander->distence(commander->enemypose) >= 1.0){
-         commander->nav_to_pose(commander->enemypose->pose);
+         commander->nav_to_pose(commander->enemypose);
       }
-      else commander->nav_to_pose(commander->currentpose->pose);
+      else commander->nav_to_pose(commander->currentpose);
    }
    
    //取距
-   double Commander::distence(const geometry_msgs::msg::PoseStamped::SharedPtr a){
-      double dis = sqrt(pow(a->pose.position.x , 2) + pow(a->pose.position.y, 2));
+   double Commander::distence(const geometry_msgs::msg::PoseStamped a){
+      double dis = sqrt(pow(a.pose.position.x , 2) + pow(a.pose.position.y, 2));
       return dis;
    }
 
    void Commander::getcurrentpose(){
       geometry_msgs::msg::TransformStamped odom_msg;
-      odom_msg = buffer.lookupTransform("map", "base_link",this->now());
-      currentpose->header.stamp = this->now();
-      currentpose->header.frame_id = "map";
-      currentpose->pose.position.x = odom_msg.transform.translation.x;
-      currentpose->pose.position.y = odom_msg.transform.translation.y;
-      currentpose->pose.position.z = odom_msg.transform.translation.z;
-      currentpose->pose.orientation = odom_msg.transform.rotation;
-      RCLCPP_INFO(this->get_logger(), "当前位置: %.2f, %.2f, %.2f",currentpose->pose.position.x,currentpose->pose.position.y,currentpose->pose.position.z);
+      odom_msg = buffer.lookupTransform("map", "livox_frame",this->now());
+      currentpose.header.stamp = this->now();
+      currentpose.header.frame_id = "map";
+      currentpose.pose.position.x = odom_msg.transform.translation.x;
+      currentpose.pose.position.y = odom_msg.transform.translation.y;
+      currentpose.pose.position.z = odom_msg.transform.translation.z;
+      currentpose.pose.orientation = odom_msg.transform.rotation;
+      RCLCPP_INFO(this->get_logger(), "当前位置: %.2f, %.2f, %.2f",currentpose.pose.position.x,currentpose.pose.position.y,currentpose.pose.position.z);
    }
 
 
