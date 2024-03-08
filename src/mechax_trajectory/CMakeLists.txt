@@ -20,24 +20,16 @@ find_package(orocos_kdl REQUIRED)
 # find_package(<dependency> REQUIRED)
 include_directories(${CMAKE_SOURCE_DIR}/include)
 
-add_executable(leftmechax_trajectory src/lefttrajectoryer.cpp)
-ament_target_dependencies(leftmechax_trajectory rclcpp visualization_msgs auto_aim_interfaces geometry_msgs tf2 tf2_ros tf2_geometry_msgs orocos_kdl)
-target_link_directories(leftmechax_trajectory PUBLIC
+add_executable(mechax_trajectory src/trajectoryer.cpp)
+ament_target_dependencies(mechax_trajectory rclcpp visualization_msgs auto_aim_interfaces geometry_msgs tf2 tf2_ros tf2_geometry_msgs orocos_kdl)
+target_link_directories(mechax_trajectory PUBLIC
       $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
       $<INSTALL_INTERFACE:include>)
-target_link_libraries(leftmechax_trajectory ${OpenCV_LIBS} ${orocos_kdl_LIBRARIES})
-
-add_executable(rightmechax_trajectory src/righttrajectoryer.cpp)
-ament_target_dependencies(rightmechax_trajectory rclcpp visualization_msgs auto_aim_interfaces geometry_msgs tf2 tf2_ros tf2_geometry_msgs orocos_kdl)
-target_link_directories(rightmechax_trajectory PUBLIC
-      $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-      $<INSTALL_INTERFACE:include>)
-target_link_libraries(rightmechax_trajectory ${OpenCV_LIBS} ${orocos_kdl_LIBRARIES})
+target_link_libraries(mechax_trajectory ${OpenCV_LIBS} ${orocos_kdl_LIBRARIES})
 
 
 install(TARGETS
-  leftmechax_trajectory
-  rightmechax_trajectory
+  mechax_trajectory
   DESTINATION lib/${PROJECT_NAME}
 )
 

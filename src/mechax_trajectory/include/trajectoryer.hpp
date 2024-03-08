@@ -3,8 +3,23 @@
 #include <algorithm>
 #include "rclcpp/rclcpp.hpp"
 #include "visualization_msgs/msg/marker.hpp"
-#include "auto_aim_interfaces/msg/serial.hpp"
+#include "auto_aim_interfaces/msg/receive_serial.hpp"
+#include "auto_aim_interfaces/msg/send_serial.hpp"
 #include "auto_aim_interfaces/msg/target.hpp"
+#include "auto_aim_interfaces/msg/bias.hpp"
+#include <tf2_ros/transform_broadcaster.h>
+
+#include <geometry_msgs/msg/transform_stamped.hpp>
+
+#include <geometry_msgs/msg/point_stamped.hpp>
+
+#include <tf2_ros/buffer.h>
+#include <tf2_ros/create_timer_ros.h>
+#include <tf2_ros/message_filter.h>
+#include <tf2_ros/transform_listener.h>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
+
+#include <std_msgs/msg/float64.hpp>
 
 using namespace std;
 
@@ -27,17 +42,17 @@ public:
     // hanshu
     Trajectoryer();
 
-    void get_all_parameter();
-
     void parameters_init();
 
-    int no_resistance_model();
+    int no_resistance_model(const float &object_x,const float &object_y,const float &object_z,const float &v0);
 
-    int single_resistance_model();
+    int single_resistance_model(const float &object_x,const float &object_y,const float &object_z,const float &v0,const float &randa);
 
-    int single_resistance_model_two();
+    int single_resistance_model_two(const float &object_x,const float &object_y,const float &object_z,const float &v0,const float &randa);
 
-    bool is_solvable();
+    int two_resistance_model(const float &object_x,const float &object_y,const float &object_z,const float &v0,const float &randa);
+
+    bool is_solvable(const float &object_x,const float &object_y,const float &object_z,const float &v0,float &alpha);
 
     int solve_trajectory();
 
@@ -45,23 +60,21 @@ public:
 
     void target_callback(const auto_aim_interfaces::msg::Target msg);
 
-    void angle_callback(const auto_aim_interfaces::msg::Serial msg);
+    void angle_callback(const auto_aim_interfaces::msg::ReceiveSerial msg);
+
+    void changeyaw_callback(const auto_aim_interfaces::msg::Bias msg);
+
+    void get_need_pose(const float &object_x,const float &object_y,const float &object_z,const float &now_pitch);
 
     // parameters
     //------------------
-    float object_z; // m
-    float object_y; // m
-    float object_x; // m
-    float v_hero; // m/s
-    float v_bubin;
-    float v0;
-    float distance; // m
+    float v0; // m/s
     float angle_pitch;
     float angle_yaw;
-    float alpha;
     float fly_t; // m
     float bias_t;
-
+    float y_bias;
+    float z_bias;
     //------------------
     float now_pitch;
     float now_yaw;
@@ -85,29 +98,30 @@ public:
     string id;
     //------------------
     //------------------
-    vector<result> results;
-    //------------------
-    //------------------
-    float randa_small;
-    float randa_big;
     float randa;
     bool is_hero;
-    float z_bias;
-    float y_bias;
     //------------------
+    float needchangeyaw;
+    bool is_can_hit;
     //------------------
     // Subsciption
     //------------------
     rclcpp::Subscription<auto_aim_interfaces::msg::Target>::SharedPtr target_sub_;
-    rclcpp::Subscription<auto_aim_interfaces::msg::Serial>::SharedPtr angle_sub_;
+    rclcpp::Subscription<auto_aim_interfaces::msg::ReceiveSerial>::SharedPtr angle_sub_;
+    rclcpp::Subscription<auto_aim_interfaces::msg::Bias>::SharedPtr changeyaw_sub_;
     //------------------
     // Publisher
     //------------------
     rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr maker_pub_;
-    rclcpp::Publisher<auto_aim_interfaces::msg::Serial>::SharedPtr result_pub_;
+    rclcpp::Publisher<auto_aim_interfaces::msg::SendSerial>::SharedPtr result_pub_;
+    rclcpp::Publisher<geometry_msgs::msg::PointStamped>::SharedPtr needpose_pub_;
+    rclcpp::Publisher<geometry_msgs::msg::PointStamped>::SharedPtr armorpose_pub_;
     //------------------
     //timer
     //------------------
     rclcpp::TimerBase::SharedPtr timer_;
     //------------------
+    // Broadcast tf from odom to gimbal_link
+    double timestamp_offset_ = 0;
+    std::unique_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_;
 };

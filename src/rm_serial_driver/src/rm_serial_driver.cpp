@@ -43,6 +43,7 @@ RMSerialDriver::RMSerialDriver(const rclcpp::NodeOptions & options)
   tf_broadcaster_ = std::make_unique<tf2_ros::TransformBroadcaster>(*this);
 
   // Create Publisher
+
   latency_pub_ = this->create_publisher<std_msgs::msg::Float64>("/latency", 10);
   leftserial_pub_ = this->create_publisher<auto_aim_interfaces::msg::ReceiveSerial>("/leftangle/init", 10);
   rightserial_pub_ = this->create_publisher<auto_aim_interfaces::msg::ReceiveSerial>("/rightangle/init", 10);
@@ -227,14 +228,14 @@ void RMSerialDriver::receiveData()
 
                       leftreceive_serial_msg_.header.frame_id = "leftodom";
                       leftreceive_serial_msg_.header.stamp = this->now();
-                      leftreceive_serial_msg_.leftpitch = packet.leftpitch;
-                      leftreceive_serial_msg_.leftyaw = packet.leftyaw;
+                      // leftreceive_serial_msg_.leftpitch = packet.leftpitch;
+                      // leftreceive_serial_msg_.leftyaw = packet.leftyaw;
                       leftserial_pub_->publish(leftreceive_serial_msg_);
 
                       rightreceive_serial_msg_.header.frame_id = "rightodom";
                       rightreceive_serial_msg_.header.stamp = this->now();
-                      rightreceive_serial_msg_.rightpitch = packet.rightpitch;
-                      rightreceive_serial_msg_.rightyaw = packet.rightyaw;
+                      // rightreceive_serial_msg_.rightpitch = packet.rightpitch;
+                      // rightreceive_serial_msg_.rightyaw = packet.rightyaw;
                       rightserial_pub_->publish(rightreceive_serial_msg_);
                   //}
 
@@ -264,18 +265,18 @@ void RMSerialDriver::aimsendData(const auto_aim_interfaces::msg::SendSerial msg)
   try {
     SendPacket packet;
     packet.header = 0xA5;
-    if(msg.id == 0)
-    {
-      packet.is_lefttracking = msg.is_tracking;
-      packet.leftpitch = msg.pitch;
-      packet.leftyaw = msg.yaw;
-    }
-    else if(msg.id == 1)
-    {
-      packet.is_righttracking = msg.is_tracking;
-      packet.rightpitch = msg.pitch;
-      packet.rightyaw = msg.yaw;
-    }
+    // if(msg.id == 0)
+    // {
+    //   packet.is_lefttracking = msg.is_tracking;
+    //   packet.leftpitch = msg.pitch;
+    //   packet.leftyaw = msg.yaw;
+    // }
+    // else if(msg.id == 1)
+    // {
+    //   packet.is_righttracking = msg.is_tracking;
+    //   packet.rightpitch = msg.pitch;
+    //   packet.rightyaw = msg.yaw;
+    // }
     crc16::Append_CRC16_Check_Sum(reinterpret_cast<uint8_t *>(&packet), sizeof(packet));
 
     std::vector<uint8_t> data = toVector(packet);
@@ -303,8 +304,8 @@ void RMSerialDriver::navsendData(const geometry_msgs::msg::Twist& cmd_vel)
 
     packet.header = 0xA5;
     packet.naving = 1;
-    packet.nav_vx = cmd_vel.linear.y*4000;
-    packet.nav_vy = -cmd_vel.linear.x*4000;
+    packet.nav_vx = -cmd_vel.linear.y*4000;
+    packet.nav_vy = cmd_vel.linear.x*4000;
     
     crc16::Append_CRC16_Check_Sum(reinterpret_cast<uint8_t *>(&packet), sizeof(packet));
 

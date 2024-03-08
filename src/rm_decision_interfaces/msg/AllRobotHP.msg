@@ -15,3 +15,5 @@ uint16 blue_5_robot_hp
 uint16 blue_7_robot_hp
 uint16 blue_outpost_hp
 uint16 blue_base_hp
+
+uint8 color

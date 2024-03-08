@@ -14,6 +14,7 @@
 #include <std_srvs/srv/trigger.hpp>
 #include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
 #include <visualization_msgs/msg/marker_array.hpp>
+#include <geometry_msgs/msg/point_stamped.hpp>
 
 // STD
 #include <memory>
@@ -36,6 +37,10 @@ public:
 private:
   void armorsCallback(const auto_aim_interfaces::msg::Armors::SharedPtr armors_ptr);
 
+  void needposeCallback(const geometry_msgs::msg::PointStamped::SharedPtr needpose_ptr);
+
+  void armorposeCallback(const geometry_msgs::msg::PointStamped::SharedPtr armorpose_ptr);
+
   void publishMarkers(const auto_aim_interfaces::msg::Target & target_msg);
 
   // Maximum allowable armor distance in the XOY plane
@@ -56,16 +61,23 @@ private:
 
   // Subscriber with tf2 message_filter
   std::string target_frame_;
+  std::string needpose_target_frame_;
   std::shared_ptr<tf2_ros::Buffer> tf2_buffer_;
   std::shared_ptr<tf2_ros::TransformListener> tf2_listener_;
   message_filters::Subscriber<auto_aim_interfaces::msg::Armors> armors_sub_;
+  message_filters::Subscriber<geometry_msgs::msg::PointStamped> needpose_sub_;
+  message_filters::Subscriber<geometry_msgs::msg::PointStamped> armorpose_sub_;
   std::shared_ptr<tf2_filter> tf2_filter_;
+  std::shared_ptr<tf2_ros::MessageFilter<geometry_msgs::msg::PointStamped>> needpose_tf2_filter_;
+  std::shared_ptr<tf2_ros::MessageFilter<geometry_msgs::msg::PointStamped>> armorpose_tf2_filter_;
 
   // Tracker info publisher
   rclcpp::Publisher<auto_aim_interfaces::msg::TrackerInfo>::SharedPtr info_pub_;
 
   // Publisher
   rclcpp::Publisher<auto_aim_interfaces::msg::Target>::SharedPtr target_pub_;
+  rclcpp::Publisher<geometry_msgs::msg::PointStamped>::SharedPtr needpose_pub_;
+  rclcpp::Publisher<geometry_msgs::msg::PointStamped>::SharedPtr armorpose_pub_;
 
   // Visualization marker publisher
   visualization_msgs::msg::Marker position_marker_;

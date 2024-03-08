@@ -49,6 +49,21 @@ public:
   // virtual std::optional<std::shared_ptr<State>> check() = 0;
 };
 
+class Robot {
+public:
+  Robot() = default;
+  Robot(int id, geometry_msgs::msg::PoseStamped pose, uint hp) : id(id), pose(pose), hp(hp) {}
+  int id;
+  geometry_msgs::msg::PoseStamped pose;
+  uint hp;
+  bool attack = false;
+  void check() {
+    if (pose.pose.position.x >= 4.5 ) {
+      attack = true;
+    }
+  }
+};
+
 
 
 
@@ -60,7 +75,6 @@ public:
   ~Commander() override; // 析构函数
   
   rclcpp_action::Client<nav2_msgs::action::NavigateToPose>::SendGoalOptions send_goal_options;
-
 
   void nav_to_pose(geometry_msgs::msg::PoseStamped goal_pose);
 
@@ -75,36 +89,48 @@ public:
 
   double distence(geometry_msgs::msg::PoseStamped a);
 
+  void processPoses(std::vector<double>& pose_param,std::vector<geometry_msgs::msg::PoseStamped> nav_points_);
+
   void getcurrentpose();
+
+  bool ifattack();
   
   geometry_msgs::msg::PoseStamped currentpose;
   
-  std::vector<geometry_msgs::msg::PoseStamped> nav_points_;
+  std::vector<geometry_msgs::msg::PoseStamped> Patrol_points_;
+  std::vector<geometry_msgs::msg::PoseStamped> Route1_points_;
+  std::vector<geometry_msgs::msg::PoseStamped> Route2_points_;
+  std::vector<geometry_msgs::msg::PoseStamped> Route3_points_;
   
   std::vector<geometry_msgs::msg::PoseStamped>::iterator random;
   geometry_msgs::msg::PoseStamped goal;
+  geometry_msgs::msg::PoseStamped home;
   std::shared_future<rclcpp_action::ClientGoalHandle<nav2_msgs::action::NavigateToPose>::SharedPtr> send_goal_future;
 
   bool checkgoal = true;
+  bool start = false;
   
   // 机器人血量
-  uint red_1_robot_hp;
-  uint red_2_robot_hp;
-  uint red_3_robot_hp;
-  uint red_4_robot_hp;
-  uint red_5_robot_hp;
-  uint red_7_robot_hp;
-  uint red_outpost_hp;
-  uint red_base_hp;
-
-  uint blue_1_robot_hp;
-  uint blue_2_robot_hp;
-  uint blue_3_robot_hp;
-  uint blue_4_robot_hp;
-  uint blue_5_robot_hp;
-  uint blue_7_robot_hp;
-  uint blue_outpost_hp;
-  uint blue_base_hp;
+  Robot self_1 = Robot(1, geometry_msgs::msg::PoseStamped(), 150);
+  Robot self_2 = Robot(2, geometry_msgs::msg::PoseStamped(), 150);
+  Robot self_3 = Robot(3, geometry_msgs::msg::PoseStamped(), 150);
+  Robot self_4 = Robot(4, geometry_msgs::msg::PoseStamped(), 150);
+  Robot self_5 = Robot(5, geometry_msgs::msg::PoseStamped(), 150);
+  Robot self_7 = Robot(7, geometry_msgs::msg::PoseStamped(), 600);
+  Robot enemy_1 = Robot(1, geometry_msgs::msg::PoseStamped(), 150);
+  Robot enemy_2 = Robot(2, geometry_msgs::msg::PoseStamped(), 150);
+  Robot enemy_3 = Robot(3, geometry_msgs::msg::PoseStamped(), 150);
+  Robot enemy_4 = Robot(4, geometry_msgs::msg::PoseStamped(), 150);
+  Robot enemy_5 = Robot(5, geometry_msgs::msg::PoseStamped(), 150);
+  Robot enemy_7 = Robot(7, geometry_msgs::msg::PoseStamped(), 600);
+  uint self_outpost_hp;
+  uint self_base_hp;
+  
+  uint enemy_outpost_hp;
+  uint enemy_base_hp;
+  bool color; //true 为蓝
+  int enemy_num = 0;
+  uint enemyhp();
 
   // 敌方机器人坐标
   geometry_msgs::msg::PoseStamped enemypose;
@@ -119,7 +145,6 @@ public:
   void executor();
   void setState(std::shared_ptr<State> state);
   void loadNavPoints();
-  void pose_callback(const nav_msgs::msg::Odometry::SharedPtr msg);
   void aim_callback(const auto_aim_interfaces::msg::Target::SharedPtr msg);
 
   void hp_callback(const rm_decision_interfaces::msg::AllRobotHP::SharedPtr msg);
@@ -128,10 +153,11 @@ public:
   std::shared_ptr<State> currentState;
 
   rclcpp::Subscription<rm_decision_interfaces::msg::AllRobotHP>::SharedPtr hp_sub_;
-  rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr pose_sub_;
   rclcpp::Subscription<auto_aim_interfaces::msg::Target>::SharedPtr aim_sub_;
-  tf2_ros::Buffer buffer{get_clock()};
-  tf2_ros::TransformListener tflistener{buffer};
+  std::shared_ptr<tf2_ros::Buffer> tf2_buffer_;
+  std::shared_ptr<tf2_ros::TransformListener> tf2_listener_;
+  // tf2_ros::Buffer buffer{get_clock()};
+  // tf2_ros::TransformListener tflistener{buffer};
 };
 
 class PatrolState : public State {

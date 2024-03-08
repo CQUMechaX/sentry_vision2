@@ -8,6 +8,7 @@
 #include <image_transport/image_transport.hpp>
 #include <image_transport/publisher.hpp>
 #include <image_transport/subscriber_filter.hpp>
+#include <opencv2/core/mat.hpp>
 #include <rclcpp/publisher.hpp>
 #include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/msg/camera_info.hpp>
@@ -23,6 +24,11 @@
 #include "armor_detector/number_classifier.hpp"
 #include "armor_detector/pnp_solver.hpp"
 #include "auto_aim_interfaces/msg/armors.hpp"
+#include "auto_aim_interfaces/msg/bias.hpp"
+
+#include <geometry_msgs/msg/point_stamped.hpp>
+
+#include <std_msgs/msg/float64.hpp>
 
 namespace rm_auto_aim
 {
@@ -34,6 +40,10 @@ public:
 
 private:
   void imageCallback(const sensor_msgs::msg::Image::ConstSharedPtr img_msg);
+  void needposeCallback(const geometry_msgs::msg::PointStamped::SharedPtr needpose_ptr);
+  void armorposeCallback(const geometry_msgs::msg::PointStamped::SharedPtr armorpose_ptr);
+
+  void is_need_change();
 
   std::unique_ptr<Detector> initDetector();
   std::vector<Armor> detectArmors(const sensor_msgs::msg::Image::ConstSharedPtr & img_msg);
@@ -56,14 +66,23 @@ private:
   visualization_msgs::msg::MarkerArray marker_array_;
   rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr marker_pub_;
 
+  rclcpp::Publisher<auto_aim_interfaces::msg::Bias>::SharedPtr changeyaw_pub;
+
   // Camera info part
   rclcpp::Subscription<sensor_msgs::msg::CameraInfo>::SharedPtr cam_info_sub_;
   cv::Point2f cam_center_;
   std::shared_ptr<sensor_msgs::msg::CameraInfo> cam_info_;
+  sensor_msgs::msg::CameraInfo::ConstSharedPtr camera_info_;
   std::unique_ptr<PnPSolver> pnp_solver_;
 
   // Image subscrpition
   rclcpp::Subscription<sensor_msgs::msg::Image>::SharedPtr img_sub_;
+
+  // Needpose subscription
+  rclcpp::Subscription<geometry_msgs::msg::PointStamped>::SharedPtr needpose_sub_;
+
+  // Armorpose subscription
+  rclcpp::Subscription<geometry_msgs::msg::PointStamped>::SharedPtr armorpose_sub_;
 
   // Debug information
   bool debug_;
@@ -74,6 +93,13 @@ private:
   image_transport::Publisher binary_img_pub_;
   image_transport::Publisher number_img_pub_;
   image_transport::Publisher result_img_pub_;
+
+  cv::Mat camera_matrix_ = cv::Mat::zeros(3, 3, CV_64FC1);
+  cv::Point2f needpose_img = cv::Point2f(0, 0);
+  cv::Point2f armorpose_img = cv::Point2f(0, 0);
+  
+  cv::Point3f needpose = cv::Point3f(0,0,0);
+  cv::Point3f armorpose = cv::Point3f(0,0,0);
 };
 
 }  // namespace rm_auto_aim

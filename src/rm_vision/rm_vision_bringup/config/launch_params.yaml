@@ -1,7 +1,7 @@
 camera: mv
 
 odom2camera:
-  xyz: "\"0.00 0.0  0.042\""
+  xyz: "\"0.000 0.000  0.000\""
   rpy: "\"0.0  0.0  0.0\""
 
 detector_log_level: INFO

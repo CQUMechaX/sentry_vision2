@@ -36,19 +36,28 @@ namespace rm_decision
       send_goal_options.result_callback = std::bind(&Commander::result_callback, this, std::placeholders::_1);
       //初始化状态
       loadNavPoints();
-      RCLCPP_INFO(this->get_logger(), "导航点个数: %ld",nav_points_.size());
-      random = nav_points_.begin();
-      goal = nav_points_[0];
+      RCLCPP_INFO(this->get_logger(), "导航点个数");
+      currentpose.header.stamp = this->now();
+      currentpose.header.frame_id = "base_link";
+      currentpose.pose.position.x = 0.0;
+      currentpose.pose.position.y = 0.0;
+      currentpose.pose.position.z = 0.0;
+      currentpose.pose.orientation.x = 0.0;
+      currentpose.pose.orientation.y = 0.0;
+      currentpose.pose.orientation.z = 0.0;
+      currentpose.pose.orientation.w = 1.0;
+      goal = currentpose;
+      tf2_buffer_ = std::make_shared<tf2_ros::Buffer>(this->get_clock());
+      tf2_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf2_buffer_);
       sleep(10);
-      currentState = std::make_shared<PatrolState>(this);
+      RCLCPP_INFO(this->get_logger(), "开始");
+      currentState = std::make_shared<GoAndStayState>(this);
       // 创建订阅(订阅裁判系统的信息)
       hp_sub_ = this->create_subscription<rm_decision_interfaces::msg::AllRobotHP>(
          "all_robot_hp", 10, std::bind(&Commander::hp_callback, this, std::placeholders::_1));
-      pose_sub_ = this->create_subscription<nav_msgs::msg::Odometry>(
-         "Odometry", 10, std::bind(&Commander::pose_callback, this, std::placeholders::_1));
       aim_sub_ = this->create_subscription<auto_aim_interfaces::msg::Target>(
          "/tracker/target", rclcpp::SensorDataQoS(),
-    std::bind(&Commander::aim_callback, this, std::placeholders::_1));
+      std::bind(&Commander::aim_callback, this, std::placeholders::_1));
       // 创建线程（处理信息和发布命令）
       
       commander_thread_ = std::thread(&Commander::decision, this);
@@ -71,13 +80,33 @@ namespace rm_decision
       while (rclcpp::ok())
       {
          // 读取信息
-         getcurrentpose();
+         if(start){
+            if(self_7.hp <= 150){//残血逃离
+               goal.header.stamp = this->now();
+               goal.header.frame_id = "map";
+               goal.pose.position.x = 0.0; //补血点坐标
+               goal.pose.position.y = 0.0;
+               goal.pose.position.z = 0.0;
+               goal.pose.orientation.x = 0.0;
+               goal.pose.orientation.y = 0.0;
+               goal.pose.orientation.z = 0.0;
+               goal.pose.orientation.w = 1.0;
+               setState(std::make_shared<GoAndStayState>(this));
+               RCLCPP_INFO(this->get_logger(), "残血逃离");
+            }
          // 判断信息
-         if(distence(enemypose) <= 5.0 && tracking == true) setState(std::make_shared<AttackState>(this));
-         // 改变状态
-         setState(std::make_shared<PatrolState>(this));
-         // 发布命令
-         // 休眠
+            else if(tracking == true){
+               if(ifattack()) setState(std::make_shared<AttackState>(this));
+               else {
+                  setState(std::make_shared<PatrolState>(this));
+               }
+            }
+            else {
+               setState(std::make_shared<PatrolState>(this));
+            }
+         
+         // setState(std::make_shared<PatrolState>(this));
+         }
       }
 
    }
@@ -85,7 +114,8 @@ namespace rm_decision
    // 执行器线程
    void Commander::executor(){
       while (rclcpp::ok())
-      {
+      {  
+         getcurrentpose();
          currentState->handle();
          // RCLCPP_INFO(this->get_logger(), "1");
          // if(auto nextState = currentState->check()){
@@ -149,23 +179,16 @@ namespace rm_decision
             checkgoal = true;
             break;
          default:
-            RCLCPP_INFO(this->get_logger(),"Unknown result code");
+            RCLCPP_INFO(get_logger(),"Unknown result code");
             checkgoal = true;
             break;
       }
    }
-   
    // 读取导航点
-   void Commander::loadNavPoints() {
+   void Commander::processPoses(std::vector<double>& pose_param,std::vector<geometry_msgs::msg::PoseStamped> nav_points_) {
+      for(uint i = 0; i < pose_param.size(); i=i+3){
          geometry_msgs::msg::PoseStamped pose;
-         std::vector<double> pose_list;
-         this->declare_parameter("poses_list", pose_list);
-         auto pose_param = this->get_parameter("poses_list").as_double_array();
-         RCLCPP_INFO(this->get_logger(), "开始传入导航点");
-         RCLCPP_INFO(this->get_logger(), "随机导航点个数: %ld",pose_param.size()/3);
-         for(uint i = 0; i < pose_param.size(); i=i+3){
          pose.header.frame_id ="map";
-         pose.header.stamp = this->now();
          pose.pose.position.x = pose_param[i];
          pose.pose.position.y = pose_param[i+1];
          pose.pose.position.z = pose_param[i+2];
@@ -175,39 +198,106 @@ namespace rm_decision
          pose.pose.orientation.w = 1.0;
          nav_points_.push_back(pose);
          RCLCPP_INFO(this->get_logger(), "传入第%d个导航点: %.2f, %.2f, %.2f",(i+3)/3,pose.pose.position.x,pose.pose.position.y,pose.pose.position.z);
-         }
+      }
    }
+   
+   void Commander::loadNavPoints() {
+      RCLCPP_INFO(this->get_logger(), "开始传入导航点");
+      geometry_msgs::msg::PoseStamped pose;
+      std::vector<double> pose_list;
+      std::vector<std::string> route_list = {"route1","route2"};
+      std::vector<std::vector<geometry_msgs::msg::PoseStamped>> list_name = {Route1_points_,Route2_points_};
+      auto list = list_name.begin();
+      this->declare_parameter("home_pose", pose_list);
+      //如果战术要求可以读取多条路径
+      home.header.frame_id ="map";
+      home.header.stamp = this->now();
+      home.pose.position.x = this->get_parameter("home_pose").as_double_array()[0];
+      home.pose.position.y = this->get_parameter("home_pose").as_double_array()[1];
+      home.pose.position.z = this->get_parameter("home_pose").as_double_array()[2];
+      for(auto it = route_list.begin(); it != route_list.end(); it++){
+         this->declare_parameter(*it, pose_list);
+         auto pose_param = this->get_parameter(*it).as_double_array();
+         processPoses(pose_param,*list);
+         RCLCPP_INFO(this->get_logger(), "%s随机导航点个数: %ld",it->c_str(),pose_param.size()/3);
+      }
+      Patrol_points_ = Route1_points_;
+      random = Patrol_points_.begin();
+   }
+
+   uint Commander::enemyhp() {
+      switch (enemy_num) {
+         case 1:
+            return enemy_1.hp;
+         case 2:
+            return enemy_2.hp;
+         case 3:
+            return enemy_3.hp;
+         case 4:
+            return enemy_4.hp;
+         case 5:
+            return enemy_5.hp;
+      }
+      return 600;
+   }
+
+   //是否出击
+   bool Commander::ifattack() {
+         //联盟赛出击条件 自身血量大于某值 坐标小于某值 敌方血量小于某值）
+      if(self_7.hp >= 200 && enemyhp() <= 300 && currentpose.pose.position.x <= 4.5 && distence(enemypose) <= 3.0)
+         return true;
+      else
+         return false;
+   }
+
    
    // 订阅回调
    void Commander::hp_callback(const rm_decision_interfaces::msg::AllRobotHP::SharedPtr msg) {
-      red_1_robot_hp = msg->red_1_robot_hp;
-      red_2_robot_hp = msg->red_2_robot_hp;
-      red_3_robot_hp = msg->red_3_robot_hp;
-      red_4_robot_hp = msg->red_4_robot_hp;
-      red_5_robot_hp = msg->red_5_robot_hp;
-      red_7_robot_hp = msg->red_7_robot_hp;
-      red_outpost_hp = msg->red_outpost_hp;
-      red_base_hp = msg->red_base_hp;
-      blue_1_robot_hp = msg->blue_1_robot_hp;
-      blue_2_robot_hp = msg->blue_2_robot_hp;
-      blue_3_robot_hp = msg->blue_3_robot_hp;
-      blue_4_robot_hp = msg->blue_4_robot_hp;
-      blue_5_robot_hp = msg->blue_5_robot_hp;
-      blue_7_robot_hp = msg->blue_7_robot_hp;
-      blue_outpost_hp = msg->blue_outpost_hp;
-      blue_base_hp = msg->blue_base_hp;
+      if(msg->color == 1){
+         enemy_1.hp = msg->red_1_robot_hp;
+         enemy_2.hp = msg->red_2_robot_hp;
+         enemy_3.hp = msg->red_3_robot_hp;
+         enemy_4.hp = msg->red_4_robot_hp;
+         enemy_5.hp = msg->red_5_robot_hp;
+         enemy_7.hp = msg->red_7_robot_hp;
+         enemy_outpost_hp = msg->red_outpost_hp;
+         enemy_base_hp = msg->red_base_hp;
+         self_1.hp = msg->blue_1_robot_hp;
+         self_2.hp = msg->blue_2_robot_hp;
+         self_3.hp = msg->blue_3_robot_hp;
+         self_4.hp = msg->blue_4_robot_hp;
+         self_5.hp = msg->blue_5_robot_hp;
+         self_7.hp = msg->blue_7_robot_hp;
+         self_outpost_hp = msg->blue_outpost_hp;
+         self_base_hp = msg->blue_base_hp;
       }
-   
-   void Commander::pose_callback(const nav_msgs::msg::Odometry::SharedPtr msg) {
-      currentpose.pose = msg->pose.pose;
+      else{
+         self_1.hp = msg->red_1_robot_hp;
+         self_2.hp = msg->red_2_robot_hp;
+         self_3.hp = msg->red_3_robot_hp;
+         self_4.hp = msg->red_4_robot_hp;
+         self_5.hp = msg->red_5_robot_hp;
+         self_7.hp = msg->red_7_robot_hp;
+         self_outpost_hp = msg->red_outpost_hp;
+         self_base_hp = msg->red_base_hp;
+         enemy_1.hp = msg->blue_1_robot_hp;
+         enemy_2.hp = msg->blue_2_robot_hp;
+         enemy_3.hp = msg->blue_3_robot_hp;
+         enemy_4.hp = msg->blue_4_robot_hp;
+         enemy_5.hp = msg->blue_5_robot_hp;
+         enemy_7.hp = msg->blue_7_robot_hp;
+         enemy_outpost_hp = msg->blue_outpost_hp;
+         enemy_base_hp = msg->blue_base_hp;
+      }
    }
 
    void Commander::aim_callback(const auto_aim_interfaces::msg::Target::SharedPtr msg) {
+      RCLCPP_INFO(this->get_logger(), "自瞄回调");
       tracking = msg->tracking;
+      enemy_num = msg->armors_num;
       if(tracking){
-         geometry_msgs::msg::PoseStamped pose_stamped;
          enemypose.header.stamp = this->now();
-         enemypose.header.frame_id = "livox_frame";
+         enemypose.header.frame_id = "base_link";
          enemypose.pose.position.x = msg->position.x;
          enemypose.pose.position.y = msg->position.y;
          enemypose.pose.position.z = msg->position.z;
@@ -220,8 +310,8 @@ namespace rm_decision
       if(commander->checkgoal){
          commander->nav_to_pose(*commander->random);
          commander->random++;
-         if(commander->random == commander->nav_points_.end()){
-            commander->random = commander->nav_points_.begin();
+         if(commander->random == commander->Patrol_points_.end()){
+            commander->random = commander->Patrol_points_.begin();
          }
          commander->checkgoal = false;
       }
@@ -239,6 +329,8 @@ namespace rm_decision
    void AttackState::handle() {
       if(commander->distence(commander->enemypose) >= 1.0){
          commander->nav_to_pose(commander->enemypose);
+         RCLCPP_INFO(commander->get_logger(), "敌方距离: %.2f,开始追击",commander->distence(commander->enemypose));
+         
       }
       else commander->nav_to_pose(commander->currentpose);
    }
@@ -249,9 +341,19 @@ namespace rm_decision
       return dis;
    }
 
+   //联盟赛获取自身坐标
    void Commander::getcurrentpose(){
       geometry_msgs::msg::TransformStamped odom_msg;
-      odom_msg = buffer.lookupTransform("map", "livox_frame",this->now());
+      try {
+          odom_msg = tf2_buffer_->lookupTransform(
+            "map", "base_link",
+            tf2::TimePointZero);
+        } catch (const tf2::TransformException & ex) {
+          RCLCPP_INFO(
+            this->get_logger(), "Could not transform : %s",
+             ex.what());
+          return;
+        }
       currentpose.header.stamp = this->now();
       currentpose.header.frame_id = "map";
       currentpose.pose.position.x = odom_msg.transform.translation.x;
@@ -260,7 +362,6 @@ namespace rm_decision
       currentpose.pose.orientation = odom_msg.transform.rotation;
       RCLCPP_INFO(this->get_logger(), "当前位置: %.2f, %.2f, %.2f",currentpose.pose.position.x,currentpose.pose.position.y,currentpose.pose.position.z);
    }
-
 
 } // namespace rm_decision
 #include "rclcpp_components/register_node_macro.hpp"
